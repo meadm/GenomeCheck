@@ -1,2 +1,16 @@
 .DS_Store
+
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary files
+temp/
+temp/busco_results/
+
+# Example data (large files that slow down startup)
+example_data.tar.gz
 example_data/
