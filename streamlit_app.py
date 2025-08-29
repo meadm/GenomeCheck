@@ -30,9 +30,9 @@ if uploaded_files:
         busco_lineage = st.selectbox(
             "Select organism lineage for BUSCO analysis:",
             options=[
-                ("bacteria_odb10", "Bacteria (odb10)"),
-                ("eukaryota_odb10", "Eukaryota (odb10)"),
-                ("archaea_odb10", "Archaea (odb10)")
+                ("bacteria_odb12", "Bacteria (odb12)"),
+                ("eukaryota_odb12", "Eukaryota (odb12)"),
+                ("archaea_odb12", "Archaea (odb12)")
             ],
             format_func=lambda x: x[1],
             help="Choose the appropriate lineage for your organisms. Bacteria for prokaryotes, Eukaryota for eukaryotes, Archaea for archaea."
@@ -44,6 +44,7 @@ if uploaded_files:
     # Save uploaded files locally
     file_handlers.create_temp_directory()
     file_paths = file_handlers.save_uploaded_files(uploaded_files)
+    st.session_state.temp_files_created = True
 
     # Process uploaded files
     directory = './temp/'
@@ -56,11 +57,14 @@ if uploaded_files:
             df = process_directory(directory, include_busco=True, busco_lineage=lineage_code)
         else:
             df = process_directory(directory, include_busco=False)
+        
+        # Mark that files have been processed for session cleanup
+        st.session_state.files_processed = True
     
     # Select columns to display
     if include_busco and any(col.startswith('BUSCO_') for col in df.columns):
         # Include BUSCO columns if available
-        display_columns = ["File", "Total length", "Num contigs", "N50", "L90", "GC%", "BUSCO_Complete", "BUSCO_Single", "BUSCO_Fragmented", "BUSCO_Missing"]
+        display_columns = ["File", "Total length", "Num contigs", "N50", "L90", "GC%", "BUSCO_Complete", "BUSCO_Single", "BUSCO_Fragmented", "BUSCO_Missing", "BUSCO_Total"]
         # Filter to only include columns that exist in the dataframe
         display_columns = [col for col in display_columns if col in df.columns]
         df = df[display_columns]
@@ -81,6 +85,7 @@ if uploaded_files:
             st.write("- **BUSCO_Single**: Percentage of complete single-copy BUSCO genes")
             st.write("- **BUSCO_Fragmented**: Percentage of fragmented BUSCO genes")
             st.write("- **BUSCO_Missing**: Percentage of missing BUSCO genes")
+            st.write("- **BUSCO_Total**: The total number of BUSCO genes searched for in the selected lineage")
             st.write("*Note: Higher completeness percentages indicate better genome quality*")
 
     # Export functionality
@@ -123,4 +128,23 @@ if uploaded_files:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
+    # Session-based cleanup
+    if 'files_processed' not in st.session_state:
+        st.session_state.files_processed = False
+        st.session_state.temp_files_created = False
+    
+    # Clean up on page refresh if files were created in this session
+    if st.session_state.temp_files_created and not uploaded_files:
+        # If no files are uploaded but we had temp files, clean up
+        file_handlers.cleanup_temp_directory()
+        st.session_state.temp_files_created = False
+        st.session_state.files_processed = False
+    
+    # Manual cleanup option
+    if st.button("Clean up temporary files"):
+        file_handlers.cleanup_temp_directory()
+        st.success("Temporary files cleaned up!")
+        st.rerun()
+    
+    # Register automatic cleanup (runs when Python process exits)
     file_handlers.register_cleanup_on_exit()

@@ -64,7 +64,7 @@ def compute_stats(fasta_file: str) -> Dict[str, Any]:
 
 
 def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineage: str = "bacteria_odb10") -> Optional[Dict[str, Any]]:
-    """Run BUSCO analysis on a FASTA file.
+    """Run BUSCO analysis on a FASTA file (Docker-optimized).
     
     Args:
         fasta_file: Path to the FASTA file
@@ -80,26 +80,34 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
         
         # Get filename without extension for BUSCO output
         base_name = os.path.splitext(os.path.basename(fasta_file))[0]
-        busco_output_dir = os.path.join(output_dir, f"busco_{base_name}")
-        
-        # Run BUSCO command
+        busco_name = f"busco_{base_name}"
+        busco_output_dir = os.path.join(output_dir, busco_name)
+
+        # Run BUSCO command (Docker-optimized)
         cmd = [
             "busco",
             "-i", fasta_file,
-            "-o", busco_output_dir,
+            "-o", busco_name,
             "-m", "genome",
+            "-f",  # Force overwrite if output exists
             "-l", lineage,
-            "--out_path", output_dir
+            "--out_path", output_dir,
+            "--cpu", "1"  # Limit CPU usage for container
         ]
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)  # 1 hour timeout
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=3600
+        )
         
         if result.returncode != 0:
             print(f"BUSCO failed for {fasta_file}: {result.stderr}")
             return None
-            
+
         # Parse BUSCO results
-        return parse_busco_results(busco_output_dir, lineage)
+        return parse_busco_results(busco_output_dir, lineage, busco_name)
         
     except subprocess.TimeoutExpired:
         print(f"BUSCO timed out for {fasta_file}")
@@ -107,12 +115,16 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
     except FileNotFoundError:
         print("BUSCO not found. Please install BUSCO first.")
         return None
+    except ModuleNotFoundError:
+        print("BUSCO dependencies missing. Please install BUSCO with: conda install -c bioconda busco")
+        return None
     except Exception as e:
         print(f"Error running BUSCO: {e}")
         return None
 
 
-def parse_busco_results(busco_dir: str, lineage: str = "bacteria_odb10") -> Optional[Dict[str, Any]]:
+def parse_busco_results(busco_dir: str, lineage: str = "bacteria_odb10", busco_name: str = 'sample') -> Optional[Dict[str, Any]]:
+    
     """Parse BUSCO results from the output directory.
     
     Args:
@@ -126,7 +138,7 @@ def parse_busco_results(busco_dir: str, lineage: str = "bacteria_odb10") -> Opti
         # Look for the short summary file
         summary_file = os.path.join(busco_dir, "short_summary.txt")
         if not os.path.exists(summary_file):
-            summary_file = os.path.join(busco_dir, f"short_summary.specific.{lineage}.txt")
+            summary_file = os.path.join(busco_dir, f"short_summary.specific.{lineage}.{busco_name}.txt")
         
         if not os.path.exists(summary_file):
             return None
@@ -138,15 +150,15 @@ def parse_busco_results(busco_dir: str, lineage: str = "bacteria_odb10") -> Opti
         results = {}
         for line in lines:
             line = line.strip()
-            if "Complete" in line and "Single" in line:
+            if "Complete" in line and "single-copy" in line:
                 results["Complete_Single"] = int(line.split()[0])
-            elif "Complete" in line and "Duplicated" in line:
+            elif "Complete" in line and "duplicated" in line:
                 results["Complete_Duplicated"] = int(line.split()[0])
             elif "Fragmented" in line:
                 results["Fragmented"] = int(line.split()[0])
             elif "Missing" in line:
                 results["Missing"] = int(line.split()[0])
-            elif "Total" in line:
+            elif "Total" in line and "BUSCO" in line:
                 results["Total"] = int(line.split()[0])
         
         # Calculate percentages
@@ -185,7 +197,8 @@ def compute_stats_with_busco(fasta_file: str, lineage: str = "bacteria_odb10") -
             "BUSCO_Single": busco_results.get("Complete_Single_Percent", 0),
             "BUSCO_Duplicated": busco_results.get("Complete_Duplicated_Percent", 0),
             "BUSCO_Fragmented": busco_results.get("Fragmented_Percent", 0),
-            "BUSCO_Missing": busco_results.get("Missing_Percent", 0)
+            "BUSCO_Missing": busco_results.get("Missing_Percent", 0),
+            "BUSCO_Total": busco_results.get("Total", 0)
         })
     else:
         basic_stats.update({
@@ -193,7 +206,8 @@ def compute_stats_with_busco(fasta_file: str, lineage: str = "bacteria_odb10") -
             "BUSCO_Single": None,
             "BUSCO_Duplicated": None,
             "BUSCO_Fragmented": None,
-            "BUSCO_Missing": None
+            "BUSCO_Missing": None,
+            "BUSCO_Total": None
         })
     
     return basic_stats
@@ -218,6 +232,6 @@ def process_directory(directory: str, include_busco: bool = True, busco_lineage:
                 stats = compute_stats_with_busco(filepath, lineage=busco_lineage)
             else:
                 stats = compute_stats(filepath)
-            stats["File"] = filename.rsplit('.', 1)[0]
+            stats["File"] = str(filename.rsplit('.', 1)[0])
             results.append(stats)
     return pd.DataFrame(results)

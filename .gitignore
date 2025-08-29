@@ -14,3 +14,6 @@ temp/busco_results/
 # Example data (large files that slow down startup)
 example_data.tar.gz
 example_data/
+
+# busco database
+busco_downloads/
