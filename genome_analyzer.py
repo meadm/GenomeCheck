@@ -4,6 +4,8 @@ import os
 import subprocess
 import json
 from typing import Dict, List, Any, Optional
+import numpy as np
+import itertools
 
 
 def compute_stats(fasta_file: str) -> Dict[str, Any]:
@@ -235,3 +237,83 @@ def process_directory(directory: str, include_busco: bool = True, busco_lineage:
             stats["File"] = str(filename.rsplit('.', 1)[0])
             results.append(stats)
     return pd.DataFrame(results)
+
+
+def run_fastani(query_file, ref_file, output_file, threads=1):
+    """
+    Run fastANI on two genome files.
+    Args:
+        query_file: Path to the query genome (FASTA)
+        ref_file: Path to the reference genome (FASTA)
+        output_file: Path to write fastANI results
+        threads: Number of threads to use
+    Returns:
+        ANI value (float) if successful, None otherwise
+    """
+    cmd = [
+        "fastANI",
+        "-q", query_file,
+        "-r", ref_file,
+        "-o", output_file,
+        "-t", str(threads)
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        # fastANI output: query, ref, ANI, fragments, matches
+        with open(output_file) as f:
+            line = f.readline()
+            parts = line.strip().split('\t')
+            if len(parts) >= 3:
+                return float(parts[2])
+        return None
+    except Exception as e:
+        print(f"fastANI failed: {e}")
+        return None
+
+
+def all_vs_all_fastani(file_paths, threads=1):
+    """
+    Run all-vs-all fastANI comparisons and return ANI matrix.
+    Args:
+        file_paths: List of genome file paths
+        threads: Number of threads
+    Returns:
+        ANI matrix (numpy array), genome names (list)
+    """
+    n = len(file_paths)
+    ani_matrix = np.zeros((n, n))
+    genome_names = [os.path.basename(fp) for fp in file_paths]
+    for i, j in itertools.combinations(range(n), 2):
+        out_file = f"./temp/fastani_{i}_{j}.txt"
+        ani = run_fastani(file_paths[i], file_paths[j], out_file, threads=threads)
+        if ani is not None:
+            ani_matrix[i, j] = ani
+            ani_matrix[j, i] = ani
+        else:
+            ani_matrix[i, j] = np.nan
+            ani_matrix[j, i] = np.nan
+    np.fill_diagonal(ani_matrix, 100.0)
+    return ani_matrix, genome_names
+
+
+def compute_distance_matrix(ani_matrix):
+    """
+    Convert ANI matrix to a distance matrix (1 - ANI/100).
+    """
+    return 1 - (ani_matrix / 100.0)
+
+
+def neighbor_joining_tree(distance_matrix, genome_names):
+    """
+    Build a neighbor-joining tree from a distance matrix.
+    Returns a Newick string.
+    """
+    try:
+        from skbio import DistanceMatrix
+        from skbio.tree import nj
+        dm = DistanceMatrix(distance_matrix, genome_names)
+        tree = nj(dm)
+        return tree.ascii_art(), str(tree)
+    except ImportError:
+        return "scikit-bio not installed", ""
+   

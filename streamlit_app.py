@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 from utils import file_handlers
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbor_joining_tree
+from scipy.cluster.hierarchy import linkage, leaves_list
 
 st.title("Genome QC and Similarity App")
 
@@ -127,6 +132,38 @@ if uploaded_files:
             file_name=f"{custom_filename}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+    st.write("---")
+    st.subheader("All-vs-All fastANI Comparison & Phylogeny")
+
+    if uploaded_files and len(file_paths) >= 2:
+        if st.button("Run all-vs-all fastANI analysis"):
+            with st.spinner("Running fastANI comparisons..."):
+                ani_matrix, genome_names = all_vs_all_fastani(file_paths)
+            st.success("fastANI analysis complete!")
+            # Replace NaNs with 0 for clustering
+            ani_matrix = np.nan_to_num(ani_matrix, nan=0.0)
+            # Show clustermap (dendrogram + heatmap)
+            st.write("### ANI Heatmap with Dendrogram")
+            cg = sns.clustermap(
+                ani_matrix,
+                metric="euclidean",
+                method="average",
+                cmap="viridis",
+                annot=True,
+                fmt=".2f",
+                xticklabels=genome_names,
+                yticklabels=genome_names,
+                figsize=(10, 8)
+            )
+            st.pyplot(cg.figure)
+            # Show neighbor-joining tree (ASCII Art)
+            st.write("### Neighbor-Joining Tree (ASCII Art)")
+            distance_matrix = 1 - (ani_matrix / 100.0)
+            tree_ascii, tree_newick = neighbor_joining_tree(distance_matrix, genome_names)
+            st.code(tree_ascii)
+            st.write("Newick format:")
+            st.code(tree_newick)
 
     # Session-based cleanup
     if 'files_processed' not in st.session_state:
