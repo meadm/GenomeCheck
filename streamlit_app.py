@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from utils import file_handlers
+import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,6 +46,9 @@ if uploaded_files:
         
         # Extract the lineage code
         lineage_code = busco_lineage[0]
+        # BUSCO CPU selection (placed inside include_busco)
+        max_cpus = os.cpu_count() or 4
+        busco_cpus = st.slider("BUSCO CPUs", min_value=1, max_value=max_cpus, value=min(4, max_cpus))
 
     # Save uploaded files locally
     file_handlers.create_temp_directory()
@@ -53,18 +57,26 @@ if uploaded_files:
 
     # Process uploaded files
     directory = './temp/'
-    
-    with st.spinner("Analyzing genomes..."):
-        # Import here to avoid loading at startup
-        from genome_analyzer import process_directory
-        
-        if include_busco:
-            df = process_directory(directory, include_busco=True, busco_lineage=lineage_code)
-        else:
+
+    # Import here to avoid loading at startup
+    from genome_analyzer import process_directory
+
+    df = None
+    # If BUSCO analysis requested, require the user to confirm lineage and click Run
+    df = None
+    if include_busco:
+        st.info("Choose a lineage and click 'Run analysis' to start BUSCO and other checks.")
+        run_now = st.button("Run analysis")
+        if run_now:
+            with st.spinner("Analyzing genomes (including BUSCO)..."):
+                df = process_directory(directory, include_busco=True, busco_lineage=lineage_code, busco_cpus=busco_cpus)
+                # Mark that files have been processed for session cleanup
+                st.session_state.files_processed = True
+    else:
+        # Non-BUSCO path can run immediately
+        with st.spinner("Analyzing genomes..."):
             df = process_directory(directory, include_busco=False)
-        
-        # Mark that files have been processed for session cleanup
-        st.session_state.files_processed = True
+            st.session_state.files_processed = True
     
     # Select columns to display
     if include_busco and any(col.startswith('BUSCO_') for col in df.columns):

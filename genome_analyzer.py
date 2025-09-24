@@ -65,7 +65,7 @@ def compute_stats(fasta_file: str) -> Dict[str, Any]:
     }
 
 
-def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineage: str = "bacteria_odb10") -> Optional[Dict[str, Any]]:
+def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineage: str = "bacteria_odb10", cpus: int = 1) -> Optional[Dict[str, Any]]:
     """Run BUSCO analysis on a FASTA file (Docker-optimized).
     
     Args:
@@ -86,6 +86,7 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
         busco_output_dir = os.path.join(output_dir, busco_name)
 
         # Run BUSCO command (Docker-optimized)
+        # cpus controls BUSCO's --cpu flag
         cmd = [
             "busco",
             "-i", fasta_file,
@@ -94,7 +95,7 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
             "-f",  # Force overwrite if output exists
             "-l", lineage,
             "--out_path", output_dir,
-            "--cpu", "1"  # Limit CPU usage for container
+            "--cpu", str(cpus)  # Limit CPU usage for container
         ]
 
         result = subprocess.run(
@@ -178,7 +179,7 @@ def parse_busco_results(busco_dir: str, lineage: str = "bacteria_odb10", busco_n
         return None
 
 
-def compute_stats_with_busco(fasta_file: str, lineage: str = "bacteria_odb10") -> Dict[str, Any]:
+def compute_stats_with_busco(fasta_file: str, lineage: str = "bacteria_odb10", cpus: int = 1) -> Dict[str, Any]:
     """Compute genome statistics including BUSCO analysis.
     
     Args:
@@ -192,7 +193,7 @@ def compute_stats_with_busco(fasta_file: str, lineage: str = "bacteria_odb10") -
     basic_stats = compute_stats(fasta_file)
     
     # Add BUSCO results
-    busco_results = run_busco(fasta_file, lineage=lineage)
+    busco_results = run_busco(fasta_file, lineage=lineage, cpus=cpus)
     if busco_results:
         basic_stats.update({
             "BUSCO_Complete": busco_results.get("Complete_Percent", 0),
@@ -215,7 +216,7 @@ def compute_stats_with_busco(fasta_file: str, lineage: str = "bacteria_odb10") -
     return basic_stats
 
 
-def process_directory(directory: str, include_busco: bool = True, busco_lineage: str = "bacteria_odb10") -> pd.DataFrame:
+def process_directory(directory: str, include_busco: bool = True, busco_lineage: str = "bacteria_odb10", busco_cpus: int = 1) -> pd.DataFrame:
     """Process all FASTA files in a directory and return statistics as a DataFrame.
     
     Args:
@@ -231,7 +232,7 @@ def process_directory(directory: str, include_busco: bool = True, busco_lineage:
         if filename.endswith((".fasta", ".fa", ".fna")):
             filepath = os.path.join(directory, filename)
             if include_busco:
-                stats = compute_stats_with_busco(filepath, lineage=busco_lineage)
+                stats = compute_stats_with_busco(filepath, lineage=busco_lineage, cpus=busco_cpus)
             else:
                 stats = compute_stats(filepath)
             stats["File"] = str(filename.rsplit('.', 1)[0])
