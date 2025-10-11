@@ -31,7 +31,7 @@ def compute_stats(fasta_file: str) -> Dict[str, Any]:
         num_contigs += 1
 
     if not lengths:
-        return {"Total length": 0, "Num contigs": 0, "N50": 0, "L90": 0, "GC%": 0}
+        return {"Total length (bp)": 0, "Num contigs": 0, "N50": 0, "L90": 0, "GC%": 0}
 
     lengths.sort(reverse=True)
     gc_percent = (gc_count / total_bases) * 100 if total_bases > 0 else 0
@@ -57,7 +57,7 @@ def compute_stats(fasta_file: str) -> Dict[str, Any]:
             break
 
     return {
-        "Total length": total_bases,
+        "Total length (bp)": total_bases,
         "Num contigs": num_contigs,
         "N50": n50,
         "L90": l90,
