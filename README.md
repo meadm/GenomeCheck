@@ -1,28 +1,17 @@
 # Genome QC App
 
-An easy-to-use Streamlit application for basic genome quality control (QC) and similarity analysis. It computes common assembly metrics (N50, L90, GC%), optionally runs BUSCO for genome completeness, and can compute pairwise ANI with fastANI and show a clustered heatmap + tree.
-
-This README is written for users who may be new to the command line and bioinformatics tools.
+An easy-to-use Streamlit application for basic genome quality control (QC) and similarity analysis. It computes common assembly metrics (N50, L90, GC%), optionally runs [BUSCO](https://busco.ezlab.org/) for genome completeness, and can estimate pairwise Average Nucleotide Identity (ANI) with [fastANI](https://www.nature.com/articles/s41467-018-07641-9) before showing a clustered heatmap and tree.
 
 ## Quick overview
 
 - Upload one or more genome FASTA files (.fasta, .fa, .fna)
-- Optionally run BUSCO (select lineage and click "Run analysis")
+- Optionally run BUSCO (select or provide lineage to use as the source of BUSCOs and click "Run analysis")
 - Run all-vs-all fastANI to produce a clustered ANI heatmap and neighbor-joining tree
-- Export results as CSV or Excel
-
-## Contents of this repository
-
-- `streamlit_app.py` — Streamlit user interface
-- `genome_analyzer.py` — Core analysis functions (statistics, BUSCO wrapper, fastANI helper)
-- `utils/file_handlers.py` — temporary file handling and cleanup helpers
-- `.streamlit/config.toml` — Streamlit configuration used by the app
-- `requirements.txt` — Python dependencies (see notes below)
-- `DEPLOYMENT.md` — deployment instructions for Docker / Streamlit Cloud
+- Export tabular results as CSV or Excel and image results as PNG, PDF, SVG, or JPEG
 
 ## Installation (local development)
 
-These steps assume you have Python 3.8+ installed. If you're unfamiliar with Python environments, the easiest path on macOS is to use Miniforge/Miniconda.
+These steps assume you have Python 3.8+ installed. If you're unfamiliar with Python environments, one of the easiest ways to implement them on macOS is to use [Miniforge3](https://github.com/conda-forge/miniforge).
 
 1. (Optional but recommended) Create and activate a Python environment (conda example):
 
@@ -37,7 +26,9 @@ conda activate genome_qc
 pip install -r requirements.txt
 ```
 
-3. Install external tools used by the app (not Python packages):
+3. Install [Streamlit](https://streamlit.io/)
+
+4. Install external tools used by the app (not Python packages):
 
 - BUSCO (optional, for completeness checks). Recommended install with conda:
 

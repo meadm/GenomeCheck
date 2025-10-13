@@ -5,6 +5,7 @@ import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import io
 from io import StringIO
 from Bio import Phylo
 from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbor_joining_tree
@@ -12,11 +13,28 @@ from scipy.cluster.hierarchy import linkage, leaves_list
 
 st.title("Genome QC and Similarity App")
 
+# Short description (subheader-sized) directly under the title
+st.subheader("Compute assembly metrics (N50, L90, GC%), run BUSCO completeness checks, and compare genomes with fastANI (clustered heatmap + neighbor‑joining tree).")
+
+# Link to repository / documentation
+st.markdown(
+    "<div style='background:#fff8e1;border-left:6px solid #ffd54f;padding:12px;border-radius:6px'>"
+    "<h3 style='margin:0'>📘 Repository & Documentation</h2>"
+    "<p style='margin:6px 0 0'>Visit the project on GitHub for full docs, releases, and example data: "
+    "<a href='https://github.com/meadm/genome_QC' target='_blank' rel='noopener' style='font-weight:600'>github.com/meadm/genome_QC</a></p></div>",
+    unsafe_allow_html=True,
+)
+
 # -------------------------
 # 1. File Upload
 # -------------------------
+# Small spacer before the uploader for visual separation
+#st.write("")
+# Slightly smaller-than-subheader upload label rendered via Markdown
+st.write("---")
+st.subheader("Upload Genome FASTA Files")
 uploaded_files = st.file_uploader(
-    "Upload genome FASTA files", type=["fasta", "fa", "fna"], accept_multiple_files=True
+    "", type=["fasta", "fa", "fna"], accept_multiple_files=True
 )
 
 if uploaded_files:
@@ -24,7 +42,7 @@ if uploaded_files:
 
     # BUSCO options
     st.write("---")
-    st.subheader("Analysis Options")
+    st.subheader("Genome Statistics and BUSCO Options")
     include_busco = st.checkbox(
         "Include BUSCO analysis (genome completeness assessment that can take several minutes per file)",
         value=False,
@@ -135,8 +153,9 @@ if uploaded_files:
 
         # Export functionality
         if not df.empty:
-            st.write("---")
-            st.subheader("Export Results")
+            #st.write("---")
+            st.write("")
+            st.write("**Export Statistics Table**")
             
             # Custom filename input
             default_filename = "genome_qc_results"
@@ -177,14 +196,70 @@ if uploaded_files:
     st.subheader("All-vs-All fastANI Comparison & Similarity Visualization")
 
     if uploaded_files and len(file_paths) >= 2:
-        if st.button("Run all-vs-all fastANI analysis"):
+        # If results cached in session_state, preload them (but don't render yet)
+        if st.session_state.get('fastani_done'):
+            ani_matrix = st.session_state.get('ani_matrix')
+            genome_names = st.session_state.get('genome_names')
+        run_button = st.button("Run all-vs-all fastANI analysis")
+
+        # If we have cached results and the user did NOT press Run now, render cached outputs and downloads
+        if st.session_state.get('fastani_done') and not run_button:
+            st.write("**ANI Similarity Heatmap and Dendrogram (cached)**")
+            # Show cached preview if available
+            if st.session_state.get('heatmap_preview'):
+                st.image(st.session_state['heatmap_preview'], use_container_width=True)
+            else:
+                st.write("(No heatmap preview available)")
+
+            # Show cached download buttons in one row
+            buf_formats = [
+                ("png", "image/png"),
+                ("pdf", "application/pdf"),
+                ("svg", "image/svg+xml"),
+                ("jpeg", "image/jpeg"),
+            ]
+            cols = st.columns(len(buf_formats))
+            for i, (fmt, mime) in enumerate(buf_formats):
+                with cols[i]:
+                    data = st.session_state.get('heatmap_bytes', {}).get(fmt) if st.session_state.get('heatmap_bytes') else None
+                    if data:
+                        st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime)
+                    else:
+                        st.write("-")
+
+            # Tree section from cache
+            st.write("### Neighbor-Joining Tree")
+            if st.session_state.get('tree_bytes'):
+                tree_preview = st.session_state['tree_bytes'].get('png')
+                if tree_preview:
+                    st.image(tree_preview, use_container_width=False)
+                else:
+                    st.write("(No tree preview available)")
+
+                tree_cols = st.columns(len(buf_formats))
+                for i, (fmt, mime) in enumerate(buf_formats):
+                    with tree_cols[i]:
+                        data = st.session_state['tree_bytes'].get(fmt)
+                        if data:
+                            st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime)
+                        else:
+                            st.write("-")
+
+                with st.expander("Newick format text (cached)"):
+                    st.code(st.session_state.get('tree_newick', ''))
+
+            else:
+                st.write("Neighbor-joining tree not available.")
+
+        if run_button:
             with st.spinner("Running fastANI comparisons..."):
                 ani_matrix, genome_names = all_vs_all_fastani(file_paths)
             st.success("fastANI analysis complete!")
             # Replace NaNs with 0 for clustering
             ani_matrix = np.nan_to_num(ani_matrix, nan=0.0)
             # Show clustermap (dendrogram + heatmap)
-            st.write("### ANI Heatmap with Dendrogram")
+            st.write("**ANI Similarity Heatmap and Dendrogram**")
+            #st.write("### ANI Heatmap with Dendrogram")
             cg = sns.clustermap(
                 ani_matrix,
                 metric="euclidean",
@@ -196,7 +271,54 @@ if uploaded_files:
                 yticklabels=genome_names,
                 figsize=(10, 8)
             )
-            st.pyplot(cg.figure)
+            # Show preview from cache if available (prevents disappearance after download)
+            if st.session_state.get('heatmap_preview'):
+                st.image(st.session_state['heatmap_preview'], use_container_width=True)
+            else:
+                st.pyplot(cg.figure)
+
+            # Export DPI selector for raster formats
+            dpi = st.selectbox("Export resolution (DPI) for PNG/JPEG", options=[72, 150, 300], index=1)
+
+            # Prepare/download formats and cache bytes in session_state to avoid recomputation on widget reruns
+            buf_formats = [
+                ("png", "image/png"),
+                ("pdf", "application/pdf"),
+                ("svg", "image/svg+xml"),
+                ("jpeg", "image/jpeg"),
+            ]
+
+            # Clear previous cached images if a new analysis was just run
+            st.session_state.pop('heatmap_bytes', None)
+            st.session_state.pop('heatmap_preview', None)
+
+            heatmap_bytes = {}
+            for fmt, mime in buf_formats:
+                try:
+                    buf = io.BytesIO()
+                    if fmt in ("png", "jpeg"):
+                        cg.figure.savefig(buf, format=fmt, bbox_inches='tight', dpi=dpi)
+                    else:
+                        cg.figure.savefig(buf, format=fmt, bbox_inches='tight')
+                    buf.seek(0)
+                    heatmap_bytes[fmt] = buf.getvalue()
+                except Exception as e:
+                    heatmap_bytes[fmt] = None
+                    st.warning(f"Could not create {fmt} for heatmap: {e}")
+
+            # Cache preview (PNG) and all bytes
+            st.session_state['heatmap_bytes'] = heatmap_bytes
+            st.session_state['heatmap_preview'] = heatmap_bytes.get('png')
+
+            # Show downloads in one row using cached bytes
+            cols = st.columns(len(buf_formats))
+            for i, (fmt, mime) in enumerate(buf_formats):
+                with cols[i]:
+                    data = st.session_state['heatmap_bytes'].get(fmt)
+                    if data:
+                        st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime)
+                    else:
+                        st.write("-")
             # Show neighbor-joining tree (rendered with Biopython/Matplotlib)
             st.write("### Neighbor-Joining Tree")
             distance_matrix = 1 - (ani_matrix / 100.0)
@@ -215,14 +337,52 @@ if uploaded_files:
                     for spine in getattr(ax, 'spines', {}).values():
                         spine.set_visible(False)
                     plt.tight_layout()
-                    st.pyplot(fig)
+                    # Show cached tree preview if available
+                    tree_preview = None
+                    if st.session_state.get('tree_bytes'):
+                        tree_preview = st.session_state['tree_bytes'].get('png')
+                    if tree_preview:
+                        st.image(tree_preview, use_container_width=False)
+                    else:
+                        st.pyplot(fig)
+
+                    # Cache tree images and show download buttons from cache
+                    st.session_state.pop('tree_bytes', None)
+                    tree_bytes = {}
+                    for fmt, mime in buf_formats:
+                        try:
+                            buf = io.BytesIO()
+                            if fmt in ("png", "jpeg"):
+                                fig.savefig(buf, format=fmt, bbox_inches='tight', dpi=dpi)
+                            else:
+                                fig.savefig(buf, format=fmt, bbox_inches='tight')
+                            buf.seek(0)
+                            tree_bytes[fmt] = buf.getvalue()
+                        except Exception as e:
+                            tree_bytes[fmt] = None
+                            st.warning(f"Could not create {fmt} for tree: {e}")
+
+                    st.session_state['tree_bytes'] = tree_bytes
+                    tree_cols = st.columns(len(buf_formats))
+                    for i, (fmt, mime) in enumerate(buf_formats):
+                        with tree_cols[i]:
+                            data = st.session_state['tree_bytes'].get(fmt)
+                            if data:
+                                st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime)
+                            else:
+                                st.write("-")
+
+                    # Mark that fastANI results are available in session state
+                    st.session_state['fastani_done'] = True
+                    st.session_state['ani_matrix'] = ani_matrix
+                    st.session_state['genome_names'] = genome_names
                 except Exception as e:
                     st.write("Failed to render tree with Biopython; falling back to ASCII output")
                     st.code(tree_ascii)
             else:
                 st.write("Neighbor-joining tree not available.")
 
-            with st.expander("Newick format"):
+            with st.expander("Newick format text"):
                 st.code(tree_newick or "")
 
     # Session-based cleanup

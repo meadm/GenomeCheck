@@ -17,3 +17,6 @@ example_data/
 
 # busco database
 busco_downloads/
+
+#requirements
+.*requirements*
