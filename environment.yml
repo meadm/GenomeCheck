@@ -2,7 +2,7 @@ name: genome_qc
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - augustus=3.5.0=pl5321h33efcc0_9
   - bamtools=2.5.3=h3af6988_0
