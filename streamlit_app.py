@@ -26,7 +26,7 @@ if uploaded_files:
     st.write("---")
     st.subheader("Analysis Options")
     include_busco = st.checkbox(
-        "Include BUSCO analysis (genome completeness assessment)",
+        "Include BUSCO analysis (genome completeness assessment that can take several minutes per file)",
         value=False,
         help="BUSCO assesses genome completeness by searching for universal single-copy orthologs. This may take several minutes per genome."
     )
@@ -40,14 +40,19 @@ if uploaded_files:
             options=[
                 ("bacteria_odb12", "Bacteria (odb12)"),
                 ("eukaryota_odb12", "Eukaryota (odb12)"),
-                ("archaea_odb12", "Archaea (odb12)")
+                ("archaea_odb12", "Archaea (odb12)"),
+                ("custom", "Custom lineage (enter manually)")
             ],
             format_func=lambda x: x[1],
             help="Choose the appropriate lineage for your organisms. Bacteria for prokaryotes, Eukaryota for eukaryotes, Archaea for archaea."
         )
         
-        # Extract the lineage code
-        lineage_code = busco_lineage[0]
+        # Extract the lineage code or allow custom input
+        if busco_lineage[0] == "custom":
+            custom_lineage = st.text_input("Enter custom BUSCO lineage (e.g. my_lineage_odb10):", value="")
+            lineage_code = custom_lineage.strip()
+        else:
+            lineage_code = busco_lineage[0]
         # BUSCO CPU selection (placed inside include_busco)
         max_cpus = os.cpu_count() or 4
         busco_cpus = st.slider("BUSCO CPUs", min_value=1, max_value=max_cpus, value=min(4, max_cpus))
