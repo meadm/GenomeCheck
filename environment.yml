@@ -188,6 +188,7 @@ dependencies:
   - readline=8.2=h7cca4af_2
   - requests=2.32.5=pyhd8ed1ab_0
   - samtools=1.22.1=ha21ef43_0
+  - seaborn==0.13.2
   - sepp=4.5.5=py312h73b7c68_3
   - setuptools=80.9.0=pyhff2d567_0
   - six=1.17.0=pyhe01879c_1
@@ -239,7 +240,6 @@ dependencies:
       - rpds-py==0.27.1
       - scikit-bio==0.7.0
       - scipy==1.16.1
-      - seaborn==0.13.2
       - smmap==5.0.2
       - statsmodels==0.14.5
       - streamlit==1.49.1
