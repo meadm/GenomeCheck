@@ -29,12 +29,12 @@ path = subprocess.run(
 
 st.info(f"{path.stdout.strip() or path.stderr.strip()}")
 
-path = subprocess.run(
-            ["fastANI", "--version"],
-            capture_output=True,
-            text=True)
+# path = subprocess.run(
+#             ["fastANI", "--version"],
+#             capture_output=True,
+#             text=True)
 
-st.info(f"{path.stdout.strip() or path.stderr.strip()}")
+# st.info(f"{path.stdout.strip() or path.stderr.strip()}")
 
 result = subprocess.run(
             ["ls", "/mount/src/"],

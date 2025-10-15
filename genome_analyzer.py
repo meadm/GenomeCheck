@@ -252,7 +252,7 @@ def run_fastani(query_file, ref_file, output_file, threads=1, timeout=600):
         ANI value (float) if successful, None otherwise
     """
     cmd = [
-        "fastANI",
+        "/home/adminuser/.conda/bin/fastANI",
         "-q", query_file,
         "-r", ref_file,
         "-o", output_file,
