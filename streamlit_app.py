@@ -14,7 +14,7 @@ import shutil, subprocess
 
 #find the path
 import subprocess
-
+import sys
 # path = subprocess.run(
 #             ["ls", "/home/adminuser/.conda/envs"],
 #             capture_output=True,
