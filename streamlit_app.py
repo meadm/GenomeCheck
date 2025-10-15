@@ -42,6 +42,17 @@ uploaded_files = st.file_uploader(
     label_visibility="collapsed",
 )
 
+# Check for busco binary and report version if available
+busco_path = shutil.which("busco")
+if not busco_path:
+    st.warning("busco binary not found in PATH. busco-based comparisons will be disabled on this host.")
+else:
+    try:
+        v = subprocess.run([busco_path, "--version"], capture_output=True, text=True, timeout=10)
+        st.info(f"busco found: {busco_path} — {v.stdout.strip() or v.stderr.strip()}")
+    except Exception:
+        st.info(f"busco found at {busco_path}")
+
 # Check for fastANI binary and report version if available
 fastani_path = shutil.which("fastANI")
 if not fastani_path:
