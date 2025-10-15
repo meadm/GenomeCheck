@@ -20,21 +20,21 @@ path = subprocess.run(
             capture_output=True,
             text=True)
 
-print(path.stdout)
+st.write(path.stdout)
 
 result = subprocess.run(
             ["ls", "/mount/src/"],
             capture_output=True,
             text=True)
 
-print(result.stdout)
+st.write(result.stdout)
 
 result = subprocess.run(
             ["ls", "/mount/src/genome_qc"],
             capture_output=True,
             text=True)
 
-print(result.stdout)
+st.write(result.stdout)
 
 st.title("Genome QC and Similarity App")
 
