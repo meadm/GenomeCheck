@@ -33,8 +33,12 @@ st.markdown(
 # Slightly smaller-than-subheader upload label rendered via Markdown
 st.write("---")
 st.subheader("Upload Genome FASTA Files")
+# file_uploader requires a non-empty label for accessibility; hide the label visually
 uploaded_files = st.file_uploader(
-    "", type=["fasta", "fa", "fna"], accept_multiple_files=True
+    "Upload genome FASTA files (hidden label)",
+    type=["fasta", "fa", "fna"],
+    accept_multiple_files=True,
+    label_visibility="collapsed",
 )
 
 if uploaded_files:

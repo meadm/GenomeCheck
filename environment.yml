@@ -4,6 +4,7 @@ channels:
   - nodefaults
   - bioconda
 dependencies:
+  - python=3.12.5
   - busco==6.0.0
   - biopython
   - openpyxl
