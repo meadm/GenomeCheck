@@ -21,9 +21,17 @@ import subprocess
 #             text=True)
 
 # st.write(path.stdout)
-
+current_dir = os.path.dirname(os.path.abspath(file))
+sys.path.append(os.path.join(current_dir, "/home/adminuser/.conda/bin/"))
 path = subprocess.run(
             ["/home/adminuser/.conda/bin/fastANI", "--version"],
+            capture_output=True,
+            text=True)
+
+st.info(f"{path.stdout.strip() or path.stderr.strip()}")
+
+path = subprocess.run(
+            ["fastANI", "--version"],
             capture_output=True,
             text=True)
 
