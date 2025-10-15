@@ -1,3 +1,4 @@
+name: genome_qc
 channels:
   - conda-forge
   - nodefaults
@@ -7,5 +8,5 @@ dependencies:
   - biopython
   - openpyxl
   - fastani
-  - sci-kit-bio
+  - scikit-bio
   - seaborn
