@@ -15,20 +15,26 @@ import shutil, subprocess
 #find the path
 import subprocess
 
-subprocess.run(
+path = subprocess.run(
             ["echo", "$PATH"],
             capture_output=True,
             text=True)
 
-subprocess.run(
+print(path.stdout)
+
+result = subprocess.run(
             ["ls", "/mount/src/"],
             capture_output=True,
             text=True)
 
-subprocess.run(
+print(result.stdout)
+
+result = subprocess.run(
             ["ls", "/mount/src/genome_qc"],
             capture_output=True,
             text=True)
+
+print(result.stdout)
 
 st.title("Genome QC and Similarity App")
 
