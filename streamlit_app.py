@@ -15,15 +15,15 @@ import shutil, subprocess
 #find the path
 import subprocess
 
-path = subprocess.run(
-            ["ls", "/home/adminuser/.conda/envs"],
-            capture_output=True,
-            text=True)
+# path = subprocess.run(
+#             ["ls", "/home/adminuser/.conda/envs"],
+#             capture_output=True,
+#             text=True)
 
-st.write(path.stdout)
+# st.write(path.stdout)
 
 path = subprocess.run(
-            ["ls", "/home/adminuser/.conda/bin"],
+            ["/home/adminuser/.conda/bin/fastANI", "--version"],
             capture_output=True,
             text=True)
 
