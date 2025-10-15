@@ -16,17 +16,17 @@ import shutil, subprocess
 import subprocess
 
 subprocess.run(
-            ["echo $PATH"],
+            ["echo", "$PATH"],
             capture_output=True,
             text=True)
 
 subprocess.run(
-            ["ls /mount/src/"],
+            ["ls", "/mount/src/"],
             capture_output=True,
             text=True)
 
 subprocess.run(
-            ["ls /mount/src/genome_qc"],
+            ["ls", "/mount/src/genome_qc"],
             capture_output=True,
             text=True)
 
