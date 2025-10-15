@@ -10,6 +10,7 @@ from io import StringIO
 from Bio import Phylo
 from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbor_joining_tree
 from scipy.cluster.hierarchy import linkage, leaves_list
+import shutil, subprocess
 
 #find the path
 import subprocess
@@ -58,6 +59,28 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True,
     label_visibility="collapsed",
 )
+
+# Check for busco binary and report version if available
+busco_path = shutil.which("busco")
+if not busco_path:
+    st.warning("busco binary not found in PATH. busco-based comparisons will be disabled on this host.")
+else:
+    try:
+        v = subprocess.run([busco_path, "--version"], capture_output=True, text=True, timeout=10)
+        st.info(f"busco found: {busco_path} — {v.stdout.strip() or v.stderr.strip()}")
+    except Exception:
+        st.info(f"busco found at {busco_path}")
+
+# Check for fastANI binary and report version if available
+fastani_path = shutil.which("fastANI")
+if not fastani_path:
+    st.warning("fastANI binary not found in PATH. fastANI-based comparisons will be disabled on this host.")
+else:
+    try:
+        v = subprocess.run([fastani_path, "--version"], capture_output=True, text=True, timeout=10)
+        st.info(f"fastANI found: {fastani_path} — {v.stdout.strip() or v.stderr.strip()}")
+    except Exception:
+        st.info(f"fastANI found at {fastani_path}")
 
 if uploaded_files:
     st.write(f"{len(uploaded_files)} genomes uploaded")
@@ -274,8 +297,15 @@ if uploaded_files:
                 st.write("Neighbor-joining tree not available.")
 
         if run_button:
-            with st.spinner("Running fastANI comparisons..."):
-                ani_matrix, genome_names = all_vs_all_fastani(file_paths)
+            if not fastani_path:
+                st.error("fastANI not available on this host. Please install fastANI or run locally with fastANI available.")
+            else:
+                with st.spinner("Running fastANI comparisons..."):
+                    ani_matrix, genome_names, fastani_errors = all_vs_all_fastani(file_paths)
+                if fastani_errors:
+                    st.warning("Some pairwise fastANI comparisons failed. See details below.")
+                    for (i, j), msg in fastani_errors.items():
+                        st.write(f"Comparison failed: {os.path.basename(file_paths[i])} vs {os.path.basename(file_paths[j])}: {msg}")
             st.success("fastANI analysis complete!")
             # Replace NaNs with 0 for clustering
             ani_matrix = np.nan_to_num(ani_matrix, nan=0.0)

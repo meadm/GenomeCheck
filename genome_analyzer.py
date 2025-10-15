@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import subprocess
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
 import itertools
 
@@ -240,7 +240,7 @@ def process_directory(directory: str, include_busco: bool = True, busco_lineage:
     return pd.DataFrame(results)
 
 
-def run_fastani(query_file, ref_file, output_file, threads=1):
+def run_fastani(query_file, ref_file, output_file, threads=1, timeout=600):
     """
     Run fastANI on two genome files.
     Args:
@@ -259,20 +259,32 @@ def run_fastani(query_file, ref_file, output_file, threads=1):
         "-t", str(threads)
     ]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=timeout)
+        if result.returncode != 0:
+            stderr = (result.stderr or "").strip()
+            raise RuntimeError(f"fastANI failed (returncode={result.returncode}): {stderr}\ncmd: {' '.join(cmd)}")
+
         # fastANI output: query, ref, ANI, fragments, matches
+        if not os.path.exists(output_file):
+            raise RuntimeError(f"fastANI did not create expected output file: {output_file}")
+
         with open(output_file) as f:
             line = f.readline()
             parts = line.strip().split('\t')
             if len(parts) >= 3:
-                return float(parts[2])
-        return None
-    except Exception as e:
-        print(f"fastANI failed: {e}")
-        return None
+                try:
+                    return float(parts[2])
+                except ValueError:
+                    raise RuntimeError(f"fastANI produced non-numeric ANI value: {parts[2]}")
+        # If we reach here, output file didn't contain expected columns
+        raise RuntimeError(f"fastANI output file malformed: {output_file}")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"fastANI timed out after {timeout} seconds for {query_file} vs {ref_file}")
+    except FileNotFoundError:
+        raise RuntimeError("fastANI binary not found. Install fastANI or run in an environment that has fastANI available.")
 
 
-def all_vs_all_fastani(file_paths, threads=1):
+def all_vs_all_fastani(file_paths, threads=1) -> Tuple[np.ndarray, List[str], Dict[Tuple[int,int], str]]:
     """
     Run all-vs-all fastANI comparisons and return ANI matrix.
     Args:
@@ -284,17 +296,20 @@ def all_vs_all_fastani(file_paths, threads=1):
     n = len(file_paths)
     ani_matrix = np.zeros((n, n))
     genome_names = [os.path.basename(fp) for fp in file_paths]
+    errors: Dict[Tuple[int,int], str] = {}
     for i, j in itertools.combinations(range(n), 2):
         out_file = f"./temp/fastani_{i}_{j}.txt"
-        ani = run_fastani(file_paths[i], file_paths[j], out_file, threads=threads)
-        if ani is not None:
+        try:
+            ani = run_fastani(file_paths[i], file_paths[j], out_file, threads=threads)
             ani_matrix[i, j] = ani
             ani_matrix[j, i] = ani
-        else:
+        except Exception as e:
+            err_msg = str(e)
+            errors[(i, j)] = err_msg
             ani_matrix[i, j] = np.nan
             ani_matrix[j, i] = np.nan
     np.fill_diagonal(ani_matrix, 100.0)
-    return ani_matrix, genome_names
+    return ani_matrix, genome_names, errors
 
 
 def compute_distance_matrix(ani_matrix):
