@@ -16,7 +16,14 @@ import shutil, subprocess
 import subprocess
 
 path = subprocess.run(
-            ["ls", "/home/adminuser/.conda"],
+            ["ls", "/home/adminuser/.conda/envs"],
+            capture_output=True,
+            text=True)
+
+st.write(path.stdout)
+
+path = subprocess.run(
+            ["ls", "/home/adminuser/.conda/bin"],
             capture_output=True,
             text=True)
 
