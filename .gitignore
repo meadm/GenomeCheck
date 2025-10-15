@@ -1,5 +1,6 @@
 .DS_Store
-
+#my bad habits
+ignore*
 
 # Python cache files
 __pycache__/

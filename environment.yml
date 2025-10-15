@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - nodefaults
+  - bioconda
+dependencies:
+  - busco==6.0.0
+  - biopython
+  - openpyxl
+  - fastani
+  - sci-kit-bio
+  - seaborn
