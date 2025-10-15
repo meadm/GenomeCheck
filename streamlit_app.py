@@ -92,12 +92,12 @@ else:
         st.info(f"busco found at {busco_path}")
 
 # Check for fastANI binary and report version if available
-fastani_path = shutil.which("fastANI")
+fastani_path = "/home/adminuser/.conda/bin/fastANI"
 if not fastani_path:
     st.warning("fastANI binary not found in PATH. fastANI-based comparisons will be disabled on this host.")
 else:
     try:
-        v = subprocess.run([fastani_path, "--version"], capture_output=True, text=True, timeout=10)
+        v = subprocess.run(["fastani_path", "--version"], capture_output=True, text=True, timeout=10)
         st.info(f"fastANI found: {fastani_path} — {v.stdout.strip() or v.stderr.strip()}")
     except Exception:
         st.info(f"fastANI found at {fastani_path}")
