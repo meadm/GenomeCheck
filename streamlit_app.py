@@ -27,7 +27,7 @@ path = subprocess.run(
             capture_output=True,
             text=True)
 
-st.write(path.stdout)
+st.info(f"{path.stdout.strip() or path.stderr.strip()}")
 
 result = subprocess.run(
             ["ls", "/mount/src/"],
