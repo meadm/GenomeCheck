@@ -8,7 +8,8 @@ WORKDIR /app
 COPY . .
 
 # Create the environment
-RUN conda install -c conda-forge -c bioconda busco=6.0.0
+#RUN conda install -c conda-forge -c bioconda busco=6.0.0
+RUN conda install -c conda-forge -c bioconda compleasm
 RUN pip install streamlit
 RUN pip install biopython
 RUN pip install openpyxl
