@@ -1,0 +1,6 @@
+busco
+biopython
+openpyxl
+fastani
+scikit-bio
+seaborn
