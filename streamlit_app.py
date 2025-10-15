@@ -11,6 +11,24 @@ from Bio import Phylo
 from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbor_joining_tree
 from scipy.cluster.hierarchy import linkage, leaves_list
 
+#find the path
+import subprocess
+
+subprocess.run(
+            ["echo $PATH"],
+            capture_output=True,
+            text=True)
+
+subprocess.run(
+            ["ls /mount/src/"],
+            capture_output=True,
+            text=True)
+
+subprocess.run(
+            ["ls /mount/src/genome_qc"],
+            capture_output=True,
+            text=True)
+
 st.title("Genome QC and Similarity App")
 
 # Short description (subheader-sized) directly under the title
