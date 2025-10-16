@@ -222,7 +222,7 @@ if uploaded_files:
             st.write("**ANI Similarity Heatmap and Dendrogram (cached)**")
             # Show cached preview if available
             if st.session_state.get('heatmap_preview'):
-                st.image(st.session_state['heatmap_preview'], use_container_width=True)
+                st.image(st.session_state['heatmap_preview'])
             else:
                 st.write("(No heatmap preview available)")
 
@@ -249,7 +249,7 @@ if uploaded_files:
             elif st.session_state.get('tree_bytes'):
                 tree_preview = st.session_state['tree_bytes'].get('png')
                 if tree_preview:
-                    st.image(tree_preview, use_container_width=False)
+                    st.image(tree_preview)
                 else:
                     st.write("(No tree preview available)")
 
@@ -295,7 +295,7 @@ if uploaded_files:
             )
             # Show preview from cache if available (prevents disappearance after download)
             if st.session_state.get('heatmap_preview'):
-                st.image(st.session_state['heatmap_preview'], use_container_width=True)
+                st.image(st.session_state['heatmap_preview'])
             else:
                 st.pyplot(cg.figure)
 
@@ -367,7 +367,7 @@ if uploaded_files:
                         if st.session_state.get('tree_bytes'):
                             tree_preview = st.session_state['tree_bytes'].get('png')
                         if tree_preview:
-                            st.image(tree_preview, use_container_width=False)
+                            st.image(tree_preview)
                         else:
                             st.pyplot(fig)
 

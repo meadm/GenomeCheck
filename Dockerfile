@@ -8,12 +8,17 @@ WORKDIR /app
 COPY . .
 
 # Create the environment
-RUN conda install -c conda-forge -c bioconda busco=6.0.0
-RUN pip install streamlit
-RUN pip install biopython
-RUN pip install openpyxl
-RUN conda install -c conda-forge -c bioconda fastani
-RUN pip install scikit-bio seaborn
+#Include BUSCO or not
+ARG INCLUDE_BUSCO=false
+RUN if [ "$INCLUDE_BUSCO" = "true" ]; then \
+      echo "Installing BUSCO and dependencies..."; \
+      mamba install -y -c conda-forge -c bioconda busco=6.0.0; \
+    else \
+      echo "Skipping BUSCO to keep image small"; \
+    fi
+
+RUN pip install --no-cache-dir streamlit biopython openpyxl scikit-bio seaborn
+RUN mamba install -c conda-forge -c bioconda fastani
 
 # Expose Streamlit port
 EXPOSE 8501

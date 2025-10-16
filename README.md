@@ -1,85 +1,114 @@
 # Genome QC App
 
-An easy-to-use Streamlit application for basic genome quality control (QC) and similarity analysis. It computes common assembly metrics (N50, L90, GC%), optionally runs [BUSCO](https://busco.ezlab.org/) for genome completeness, and can estimate pairwise Average Nucleotide Identity (ANI) with [fastANI](https://www.nature.com/articles/s41467-018-07641-9) before showing a clustered heatmap and tree.
+An easy-to-use Streamlit application for basic genome quality control (QC) and similarity analysis. The app will compute common assembly metrics (N50, L90, GC%), optionally runs [BUSCO](https://busco.ezlab.org/) for genome completeness, and can estimate pairwise Average Nucleotide Identity (ANI) with [fastANI](https://www.nature.com/articles/s41467-018-07641-9) before showing a clustered heatmap and tree.
 
 ## Quick overview
 
 - Upload one or more genome FASTA files (.fasta, .fa, .fna)
 - Optionally run BUSCO (select or provide lineage to use as the source of BUSCOs and click "Run analysis")
-- Run all-vs-all fastANI to produce a clustered ANI heatmap and neighbor-joining tree
-- Export tabular results as CSV or Excel and image results as PNG, PDF, SVG, or JPEG
+- Optionally run all-vs-all fastANI to produce a clustered ANI heatmap and neighbor-joining tree
+- Export tabular results as a CSV or Excel file and image results as PNG, PDF, SVG, or JPEG
 
-## Installation (local development)
+## Streamlit Community Cloud
 
-These steps assume you have Python 3.8+ installed. If you're unfamiliar with Python environments, one of the easiest ways to implement them on macOS is to use [Miniforge3](https://github.com/conda-forge/miniforge).
+Use the hosted app here: [genomeqc.streamlit.app](https://genomeqc.streamlit.app/).
 
-1. (Optional but recommended) Create and activate a Python environment (conda example):
+Notes:
+- BUSCO is disabled on the hosted Cloud app. For BUSCO features, run locally or use the BUSCO-enabled Docker image (see below).
+
+## Local Installation and Use
+
+These steps assume you have conda/mamba available (e.g., via [Miniforge3](https://github.com/conda-forge/miniforge)).
+
+0. Clone this repository and enter the project directory:
 
 ```bash
-conda create -n genome_qc python=3.10 -y
+git clone https://github.com/meadm/genome_QC.git
+cd genome_QC
+```
+
+1. Create the environment from the `environment.yml` file and activate it:
+
+```bash
+mamba env create -f environment.yml  # or: conda env create -f environment.yml
 conda activate genome_qc
 ```
 
-2. Install Python requirements:
+2. Install Streamlit (if not already present in the environment):
 
 ```bash
-pip install -r requirements.txt
+pip install streamlit
 ```
 
-3. Install [Streamlit](https://streamlit.io/)
-
-4. Install external tools used by the app (not Python packages):
-
-- BUSCO (optional, for completeness checks). Recommended install with conda:
+3. BUSCO is NOT included in the distributed `environment.yml` to keep installs lighter. If you need BUSCO locally, install it separately:
 
 ```bash
-conda install -c bioconda busco
+conda install -c conda-forge -c bioconda busco=6.0.0
 ```
 
-- fastANI (optional, for ANI comparisons):
-
-```bash
-conda install -c bioconda fastani
-```
-
-4. Run the Streamlit app locally:
+4. Run the app:
 
 ```bash
 streamlit run streamlit_app.py
 ```
 
-Open the URL printed by Streamlit (usually http://localhost:8501) in your browser.
+Open the URL printed by Streamlit (usually http://localhost:8501) in your web browser.
 
-If you prefer Docker or Streamlit Cloud, see `DEPLOYMENT.md`.
+If you prefer Docker, see the section below.
+
+## Run with Docker
+
+You can run a lean image (no BUSCO) or a BUSCO-enabled image. BUSCO-enabled images include the BUSCO binary but download lineage datasets at runtime as needed.
+
+Build images when in your cloned repo (examples):
+
+```bash
+# Lean image (default; no BUSCO)
+docker build -t genome-qc:latest .
+
+# BUSCO-enabled image
+docker build --build-arg INCLUDE_BUSCO=true -t genome-qc:busco .
+```
+
+Run the app:
+
+```bash
+# Lean image
+docker run --rm -p 8501:8501 -v "$PWD:/app/work" genome-qc:latest \
+  streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+
+# BUSCO-enabled image
+docker run --rm -p 8501:8501 -v "$PWD:/app/work" genome-qc:busco \
+  streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+```
+
+Notes:
+- BUSCO lineage data will be downloaded on demand into the mounted volume (e.g., `/app/work`). Keep this directory writable and persistent if you want to cache downloads.
+- The UI will keep BUSCO disabled if the binary isn't present; use the `:busco` image for BUSCO features.
 
 ## How to use the app (step-by-step)
 
 1. Open the app in your browser.
-2. Use the "Upload genome FASTA files" control to upload one or more assemblies.
+2. Use the "Upload genome FASTA files" section to upload one or more assemblies.
 3. (Optional) Tick "Include BUSCO analysis" if you want completeness estimates.
    - If you do, choose a lineage from the dropdown or select "Custom" and paste your lineage name.
    - Choose the number of CPUs with the slider (default: 4). This controls BUSCO parallelism and speeds up runs on multi-core machines.
    - Click the "Run analysis" button to start BUSCO; a progress bar and per-file status updates will show progress.
-4. After analysis, view the results table and explanations.
-5. (Optional) Run the "Run all-vs-all fastANI analysis" button to compute pairwise ANI across uploaded genomes and generate a clustered heatmap + tree.
-6. Export results as CSV or Excel using the download buttons.
+   - Export tabular results as CSV or Excel using the download buttons.
+4. (Optional) Run the "Run all-vs-all fastANI analysis" button to compute pairwise ANI across uploaded genomes and generate a clustered heatmap + tree.
+   - Note that fastANI is *estimating* whole genome simlilarity so the output trees may not be phylogenetically correct.
+   - Download result images as PNG, PDF, SVG, or JPEG
 
 ## Notes about BUSCO
 
-- BUSCO must be installed separately (conda bioconda channel recommended).
-- BUSCO can be slow for large genomes; increase CPUs to speed it up, but be mindful of memory.
+- BUSCO must be installed separately (conda/bioconda recommended) when running locally or via Docker.
+- BUSCO can be slow for large (> 15Mb) genomes; increase CPUs to speed it up, but be mindful of local memory.
 - BUSCO expects lineage datasets to be available. The app will use BUSCO's configuration/location; you can pre-download lineages to avoid network downloads.
 - If you provide a "Custom" lineage, make sure that lineage name is valid and available to BUSCO on the machine where the app runs.
-
-## Notes about fastANI
-
-- fastANI is executed as an external program (subprocess) and does not import numpy/pandas internals — this avoids package version conflicts.
-- Ensure `fastANI` is on PATH or installed in the same environment used to run Streamlit.
+- On Streamlit Cloud specifically, BUSCO is not available and is disabled in the UI.
 
 ## Troubleshooting
 
-- "BUSCO not found" errors: install BUSCO in the same environment you use to run Streamlit.
-- "Data must be symmetric and cannot contain NaNs" (tree building): some fastANI comparisons may fail; re-run or inspect logs. The app replaces NaNs with zero for clustering.
 - If the app cannot find `fastANI` or `busco`, test from your terminal:
 
 ```bash
@@ -89,24 +118,14 @@ fastANI --version
 
 If these fail, install the tool or adjust your PATH.
 
-## Advanced tips
-
-- For big batches of genomes, consider running BUSCO on a cluster or machine with more RAM/CPUs and importing results into the app.
-- To speed up BUSCO, install DIAMOND (bioconda) so BUSCO will use it for sequence searches when appropriate.
-- To create publication-quality trees, you can export the Newick string from the app and use dedicated tree viewers (iTOL, ETE3).
-
-## Example workflow (for novices)
-
-1. Install Miniforge/conda and create the `genome_qc` environment (see Installation).
-2. Install prerequisites and tools.
-3. Launch the app: `streamlit run streamlit_app.py`.
-4. Upload 2–6 small bacterial assemblies (example FASTA files can be downloaded from NCBI).
-5. Tick "Include BUSCO", choose "Bacteria (odb12)", set CPUs to 4, click "Run analysis".
-6. When BUSCO finishes, click "Run all-vs-all fastANI analysis" and inspect the heatmap + tree.
-
 ## Contributing and development
 
-Contributions welcome — please open issues or pull requests. If you change behavior, add/update tests where appropriate.
+Contributions welcome! Please:
+
+- Create a feature branch from `main` (e.g., `feature/better-export`, `fix/tree-guard`).
+- Add clear descriptions of the changes and rationales to Pull Requests.
+- Prefer “Squash and merge” to keep history tidy.
+- For larger changes or requests, open an issue first to discuss scope and approach.
 
 ## License
 
