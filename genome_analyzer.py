@@ -88,7 +88,7 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
         # Run BUSCO command (Docker-optimized)
         # cpus controls BUSCO's --cpu flag
         cmd = [
-            "busco",
+            "/home/adminuser/.conda/bin/busco",
             "-i", fasta_file,
             "-o", busco_name,
             "-m", "genome",

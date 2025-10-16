@@ -11,11 +11,6 @@ from Bio import Phylo
 from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbor_joining_tree
 from scipy.cluster.hierarchy import linkage, leaves_list
 
-
-
-
-
-
 st.title("Genome QC and Similarity App")
 
 # Short description (subheader-sized) directly under the title
