@@ -98,6 +98,11 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
             "--cpu", str(cpus)  # Limit CPU usage for container
         ]
 
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+        if result.returncode != 0:
+            # bubble up full context
+            raise RuntimeError(f"BUSCO failed (code {result.returncode}).\ncmd: {' '.join(cmd)}\nSTDERR:\n{result.stderr}\nSTDOUT:\n{result.stdout}")
+
         result = subprocess.run(
             cmd,
             capture_output=True,
