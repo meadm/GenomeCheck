@@ -195,7 +195,8 @@ if uploaded_files:
                 file_name=f"{custom_filename}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            
+            #try to print the busco results directory
+            import subprocess
             path = subprocess.run(
                 ["ls", "./temp/busco_results/"], capture_output=True, text=True)
 
