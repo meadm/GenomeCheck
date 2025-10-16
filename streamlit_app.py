@@ -47,11 +47,20 @@ if uploaded_files:
     # BUSCO options
     st.write("---")
     st.subheader("Genome Statistics and BUSCO Options")
+    # Detect BUSCO availability in the environment
+    import shutil
+    busco_available = shutil.which("busco") is not None
+
     include_busco = st.checkbox(
         "Include BUSCO analysis (genome completeness assessment that can take several minutes per file)",
         value=False,
-        help="BUSCO assesses genome completeness by searching for universal single-copy orthologs. This may take several minutes per genome."
+        help="BUSCO assesses genome completeness by searching for universal single-copy orthologs. This may take several minutes per genome.",
+        disabled=not busco_available,
     )
+    # If BUSCO is not available (e.g., Streamlit Cloud), force-disable and inform the user
+    if not busco_available:
+        st.warning("BUSCO is not available on the Streamlit Cloud implementation of this app. Run locally or use our Docker image with BUSCO.")
+        include_busco = False
     
     if include_busco:
         st.info("⚠️ **Note**: BUSCO analysis can take 5-30 minutes per genome depending on size and complexity.")
@@ -195,17 +204,7 @@ if uploaded_files:
                 file_name=f"{custom_filename}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            #try to print the busco results directory
-            import subprocess
-            path = subprocess.run(
-                ["/home/adminuser/.conda/bin/busco", "--version"], capture_output=True, text=True)
-
-            st.info(f"{path.stdout.strip() or path.stderr.strip()}")
-
-            path = subprocess.run(
-                ["ls", "./temp/"], capture_output=True, text=True)
-
-            st.info(f"{path.stdout.strip() or path.stderr.strip()}")
+            # BUSCO diagnostics are suppressed on Cloud to avoid errors when unavailable
 
     #fastANI section
     st.write("---")

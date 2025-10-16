@@ -2,6 +2,7 @@ from Bio import SeqIO
 import pandas as pd
 import os
 import subprocess
+import shutil
 import json
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
@@ -85,10 +86,15 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
         busco_name = f"busco_{base_name}"
         busco_output_dir = os.path.join(output_dir, busco_name)
 
-        # Run BUSCO command (Docker-optimized)
+        # Resolve BUSCO binary dynamically (works in Docker image where busco is on PATH)
+        busco_bin = shutil.which("busco")
+        if not busco_bin:
+            raise FileNotFoundError("BUSCO binary not found in PATH")
+
+        # Run BUSCO command
         # cpus controls BUSCO's --cpu flag
         cmd = [
-            "/home/adminuser/.conda/bin/busco",
+            busco_bin,
             "-i", fasta_file,
             "-o", busco_name,
             "-m", "genome",
@@ -100,19 +106,10 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
         if result.returncode != 0:
-            # bubble up full context
-            raise RuntimeError(f"BUSCO failed (code {result.returncode}).\ncmd: {' '.join(cmd)}\nSTDERR:\n{result.stderr}\nSTDOUT:\n{result.stdout}")
-
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=3600
-        )
-        
-        if result.returncode != 0:
-            print(f"BUSCO failed for {fasta_file}: {result.stderr}")
-            return None
+            # Bubble up full context so the caller/UI can render it
+            raise RuntimeError(
+                f"BUSCO failed (code {result.returncode}).\ncmd: {' '.join(cmd)}\nSTDERR:\n{result.stderr}\nSTDOUT:\n{result.stdout}"
+            )
 
         # Parse BUSCO results
         return parse_busco_results(busco_output_dir, lineage, busco_name)
@@ -121,7 +118,7 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
         print(f"BUSCO timed out for {fasta_file}")
         return None
     except FileNotFoundError:
-        print("BUSCO not found. Please install BUSCO first.")
+        # BUSCO not available in this environment (e.g., Streamlit Cloud)
         return None
     except ModuleNotFoundError:
         print("BUSCO dependencies missing. Please install BUSCO with: conda install -c bioconda busco")
