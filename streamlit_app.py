@@ -244,7 +244,9 @@ if uploaded_files:
 
             # Tree section from cache
             st.write("### Neighbor-Joining Tree")
-            if st.session_state.get('tree_bytes'):
+            if len(st.session_state.get('genome_names', [])) < 3:
+                st.info("Tree not generated: need at least 3 genomes to build a neighbor-joining tree.")
+            elif st.session_state.get('tree_bytes'):
                 tree_preview = st.session_state['tree_bytes'].get('png')
                 if tree_preview:
                     st.image(tree_preview, use_container_width=False)
@@ -260,8 +262,9 @@ if uploaded_files:
                         else:
                             st.write("-")
 
-                with st.expander("Newick format text (cached)"):
-                    st.code(st.session_state.get('tree_newick', ''))
+                if len(st.session_state.get('genome_names', [])) >= 3:
+                    with st.expander("Newick format text (cached)"):
+                        st.code(st.session_state.get('tree_newick', ''))
 
             else:
                 st.write("Neighbor-joining tree not available.")
@@ -340,69 +343,73 @@ if uploaded_files:
                         st.write("-")
             # Show neighbor-joining tree (rendered with Biopython/Matplotlib)
             st.write("### Neighbor-Joining Tree")
-            distance_matrix = 1 - (ani_matrix / 100.0)
-            tree_ascii, tree_newick = neighbor_joining_tree(distance_matrix, genome_names)
-            if tree_newick:
-                try:
-                    tree_obj = Phylo.read(StringIO(tree_newick), "newick")
-                    tree_obj.ladderize()
-                    # size depends on number of taxa
-                    height = max(4, len(genome_names) * 0.3)
-                    fig = plt.figure(figsize=(6, height))
-                    ax = fig.add_subplot(1, 1, 1)
-                    Phylo.draw(tree_obj, do_show=False, axes=ax, show_confidence=False, label_func=lambda n: n.name)
-                    # remove axes, ticks and spines for a cleaner tree-only view
-                    ax.set_axis_off()
-                    for spine in getattr(ax, 'spines', {}).values():
-                        spine.set_visible(False)
-                    plt.tight_layout()
-                    # Show cached tree preview if available
-                    tree_preview = None
-                    if st.session_state.get('tree_bytes'):
-                        tree_preview = st.session_state['tree_bytes'].get('png')
-                    if tree_preview:
-                        st.image(tree_preview, use_container_width=False)
-                    else:
-                        st.pyplot(fig)
-
-                    # Cache tree images and show download buttons from cache
-                    st.session_state.pop('tree_bytes', None)
-                    tree_bytes = {}
-                    for fmt, mime in buf_formats:
-                        try:
-                            buf = io.BytesIO()
-                            if fmt in ("png", "jpeg"):
-                                fig.savefig(buf, format=fmt, bbox_inches='tight', dpi=dpi)
-                            else:
-                                fig.savefig(buf, format=fmt, bbox_inches='tight')
-                            buf.seek(0)
-                            tree_bytes[fmt] = buf.getvalue()
-                        except Exception as e:
-                            tree_bytes[fmt] = None
-                            st.warning(f"Could not create {fmt} for tree: {e}")
-
-                    st.session_state['tree_bytes'] = tree_bytes
-                    tree_cols = st.columns(len(buf_formats))
-                    for i, (fmt, mime) in enumerate(buf_formats):
-                        with tree_cols[i]:
-                            data = st.session_state['tree_bytes'].get(fmt)
-                            if data:
-                                st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime)
-                            else:
-                                st.write("-")
-
-                    # Mark that fastANI results are available in session state
-                    st.session_state['fastani_done'] = True
-                    st.session_state['ani_matrix'] = ani_matrix
-                    st.session_state['genome_names'] = genome_names
-                except Exception as e:
-                    st.write("Failed to render tree with Biopython; falling back to ASCII output")
-                    st.code(tree_ascii)
+            if len(genome_names) < 3:
+                st.info("Tree not generated: need at least 3 genomes to build a neighbor-joining tree.")
             else:
-                st.write("Neighbor-joining tree not available.")
+                distance_matrix = 1 - (ani_matrix / 100.0)
+                tree_ascii, tree_newick = neighbor_joining_tree(distance_matrix, genome_names)
+                if tree_newick:
+                    try:
+                        tree_obj = Phylo.read(StringIO(tree_newick), "newick")
+                        tree_obj.ladderize()
+                        # size depends on number of taxa
+                        height = max(4, len(genome_names) * 0.3)
+                        fig = plt.figure(figsize=(6, height))
+                        ax = fig.add_subplot(1, 1, 1)
+                        Phylo.draw(tree_obj, do_show=False, axes=ax, show_confidence=False, label_func=lambda n: n.name)
+                        # remove axes, ticks and spines for a cleaner tree-only view
+                        ax.set_axis_off()
+                        for spine in getattr(ax, 'spines', {}).values():
+                            spine.set_visible(False)
+                        plt.tight_layout()
+                        # Show cached tree preview if available
+                        tree_preview = None
+                        if st.session_state.get('tree_bytes'):
+                            tree_preview = st.session_state['tree_bytes'].get('png')
+                        if tree_preview:
+                            st.image(tree_preview, use_container_width=False)
+                        else:
+                            st.pyplot(fig)
 
-            with st.expander("Newick format text"):
-                st.code(tree_newick or "")
+                        # Cache tree images and show download buttons from cache
+                        st.session_state.pop('tree_bytes', None)
+                        tree_bytes = {}
+                        for fmt, mime in buf_formats:
+                            try:
+                                buf = io.BytesIO()
+                                if fmt in ("png", "jpeg"):
+                                    fig.savefig(buf, format=fmt, bbox_inches='tight', dpi=dpi)
+                                else:
+                                    fig.savefig(buf, format=fmt, bbox_inches='tight')
+                                buf.seek(0)
+                                tree_bytes[fmt] = buf.getvalue()
+                            except Exception as e:
+                                tree_bytes[fmt] = None
+                                st.warning(f"Could not create {fmt} for tree: {e}")
+
+                        st.session_state['tree_bytes'] = tree_bytes
+                        tree_cols = st.columns(len(buf_formats))
+                        for i, (fmt, mime) in enumerate(buf_formats):
+                            with tree_cols[i]:
+                                data = st.session_state['tree_bytes'].get(fmt)
+                                if data:
+                                    st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime)
+                                else:
+                                    st.write("-")
+
+                        # Mark that fastANI results are available in session state
+                        st.session_state['fastani_done'] = True
+                        st.session_state['ani_matrix'] = ani_matrix
+                        st.session_state['genome_names'] = genome_names
+                    except Exception as e:
+                        st.write("Failed to render tree with Biopython; falling back to ASCII output")
+                        st.code(tree_ascii)
+                else:
+                    st.write("Neighbor-joining tree not available.")
+
+            if len(genome_names) >= 3:
+                with st.expander("Newick format text"):
+                    st.code(tree_newick or "")
 
     # Session-based cleanup
     if 'files_processed' not in st.session_state:
