@@ -195,7 +195,13 @@ if uploaded_files:
                 file_name=f"{custom_filename}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+            
+            path = subprocess.run(
+                ["ls", "./temp/busco_results/"], capture_output=True, text=True)
 
+            st.info(f"{path.stdout.strip() or path.stderr.strip()}")
+
+    #fastANI section
     st.write("---")
     st.subheader("All-vs-All fastANI Comparison & Similarity Visualization")
 
