@@ -198,7 +198,7 @@ if uploaded_files:
             #try to print the busco results directory
             import subprocess
             path = subprocess.run(
-                ["busco", "--version"], capture_output=True, text=True)
+                ["/home/adminuser/.conda/bin/busco", "--version"], capture_output=True, text=True)
 
             st.info(f"{path.stdout.strip() or path.stderr.strip()}")
 
