@@ -198,7 +198,12 @@ if uploaded_files:
             #try to print the busco results directory
             import subprocess
             path = subprocess.run(
-                ["ls", "./temp/busco_results/"], capture_output=True, text=True)
+                ["busco", "--version"], capture_output=True, text=True)
+
+            st.info(f"{path.stdout.strip() or path.stderr.strip()}")
+
+            path = subprocess.run(
+                ["ls", "./temp/"], capture_output=True, text=True)
 
             st.info(f"{path.stdout.strip() or path.stderr.strip()}")
 
