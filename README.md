@@ -18,6 +18,8 @@ Notes:
 
 ## Local Installation and Use
 
+*Local installation is recommended if BUSCO analysis or more compute resources are needed (e.g. genome upload for large FASTAs or fastANI analyses are running slow on Streamlit Community Cloud)*
+
 These steps assume you have conda/mamba available (e.g., via [Miniforge3](https://github.com/conda-forge/miniforge)).
 
 0. Clone this repository and enter the project directory:

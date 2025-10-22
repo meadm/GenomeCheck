@@ -242,6 +242,22 @@ def process_directory(directory: str, include_busco: bool = True, busco_lineage:
     return pd.DataFrame(results)
 
 
+def get_fastani_binary():
+    """Find fastANI binary in common locations."""
+    # Try common locations in order of preference
+    paths = [
+        shutil.which("fastANI"),  # PATH (most flexible)
+        "/home/adminuser/.conda/bin/fastANI",  # Streamlit Cloud
+        "/usr/local/bin/fastANI",  # Docker/conda
+        "/opt/conda/bin/fastANI",  # Alternative Docker
+        "/usr/bin/fastANI"  # System package
+    ]
+    for path in paths:
+        if path and os.path.exists(path):
+            return path
+    raise FileNotFoundError("fastANI not found in any common locations. Install fastANI or ensure it's on PATH.")
+
+
 def run_fastani(query_file, ref_file, output_file, threads=1, timeout=600):
     """
     Run fastANI on two genome files.
@@ -253,8 +269,13 @@ def run_fastani(query_file, ref_file, output_file, threads=1, timeout=600):
     Returns:
         ANI value (float) if successful, None otherwise
     """
+    try:
+        fastani_bin = get_fastani_binary()
+    except FileNotFoundError as e:
+        raise RuntimeError(f"fastANI binary not found: {e}")
+    
     cmd = [
-        "/home/adminuser/.conda/bin/fastANI",
+        fastani_bin,
         "-q", query_file,
         "-r", ref_file,
         "-o", output_file,
