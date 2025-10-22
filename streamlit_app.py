@@ -59,7 +59,7 @@ if uploaded_files:
     )
     # If BUSCO is not available (e.g., Streamlit Cloud), force-disable and inform the user
     if not busco_available:
-        st.warning("BUSCO is not available on the Streamlit Cloud implementation of this app. Run locally or use our Docker image with BUSCO.")
+        st.warning("BUSCO is not available on the Streamlit Cloud or lean Docker (e.g. 'genome-qc:latest') implementations of this app. Run locally or use our Docker image with BUSCO ('genome-qc:busco') if you need BUSCO analyses.")
         include_busco = False
     
     if include_busco:
