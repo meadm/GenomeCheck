@@ -208,7 +208,6 @@ if uploaded_files:
                 file_name=f"{custom_filename}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-            # BUSCO diagnostics are suppressed on Cloud to avoid errors when unavailable
 
     #fastANI section
     st.write("---")

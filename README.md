@@ -14,11 +14,13 @@ An easy-to-use Streamlit application for basic genome quality control (QC) and s
 Use the hosted app here: [genomeqc.streamlit.app](https://genomeqc.streamlit.app/).
 
 Notes:
-- BUSCO is disabled on the hosted Cloud app. For BUSCO features, run locally or use the BUSCO-enabled Docker image (see below).
+- BUSCO is disabled on the hosted Cloud app. For BUSCO features, use the BUSCO-enabled Docker image or run locally.
 
 ## Run with Docker
 
-*Running the app via Docker or a local installation is recommended if BUSCO analysis or more compute resources are needed (e.g. genome upload for large FASTAs or fastANI analyses are running slow on Streamlit Community Cloud)*
+*Running the app via Docker or a local installation is recommended if a BUSCO analysis or more compute resources are needed (e.g. genome upload for large FASTAs or fastANI analyses are running slow on Streamlit Community Cloud)*
+
+**Prerequisites**: Docker must be installed and running on your computer. Download Docker from [docker.com](https://www.docker.com/products/docker-desktop/) if you don't have it installed.
 
 ### Quick Start (Recommended)
 
@@ -84,6 +86,10 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
 4. (Optional) Run the "Run all-vs-all fastANI analysis" button to compute pairwise ANI across uploaded genomes and generate a clustered heatmap + tree.
    - Note that fastANI is *estimating* whole genome simlilarity so the output trees may not be phylogenetically correct.
    - Download result images as PNG, PDF, SVG, or JPEG
+
+### Cleanup
+- Use the "Clean up temporary files" button to free up disk space after analysis or to reset the app if old results are still present.
+- Temporary files are automatically cleaned up when you refresh the page or upload new files
 
 ## Notes about BUSCO
 
