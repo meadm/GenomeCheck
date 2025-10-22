@@ -10,6 +10,7 @@ from io import StringIO
 from Bio import Phylo
 from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbor_joining_tree
 from scipy.cluster.hierarchy import linkage, leaves_list
+from version import __version__
 
 st.title("Genome QC and Similarity App")
 
@@ -24,6 +25,9 @@ st.markdown(
     "<a href='https://github.com/meadm/genome_QC' target='_blank' rel='noopener' style='font-weight:600'>github.com/meadm/genome_QC</a></p></div>",
     unsafe_allow_html=True,
 )
+
+# Version info
+st.caption(f"Version: {__version__}")
 
 # -------------------------
 # 1. File Upload

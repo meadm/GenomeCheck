@@ -2,7 +2,7 @@
 
 An easy-to-use Streamlit application for basic genome quality control (QC) and similarity analysis. The app will compute common assembly metrics (N50, L90, GC%), optionally runs [BUSCO](https://busco.ezlab.org/) for genome completeness, and can estimate pairwise Average Nucleotide Identity (ANI) with [fastANI](https://www.nature.com/articles/s41467-018-07641-9) before showing a clustered heatmap and tree.
 
-## Quick overview
+## Quick Overview
 
 - Upload one or more genome FASTA files (.fasta, .fa, .fna)
 - Optionally run BUSCO (select or provide lineage to use as the source of BUSCOs and click "Run analysis")
@@ -20,14 +20,14 @@ Notes:
 
 *Running the app via Docker or a local installation is recommended if BUSCO analysis or more compute resources are needed (e.g. genome upload for large FASTAs or fastANI analyses are running slow on Streamlit Community Cloud)*
 
-### Quick start (recommended)
+### Quick Start (Recommended)
 
-**Basic version (no BUSCO):**
+**Basic Version (No BUSCO):**
 ```bash
 docker run --rm -p 8501:8501 meadm/genome-qc:latest
 ```
 
-**BUSCO-enabled version:**
+**BUSCO-Enabled Version:**
 ```bash
 docker run --rm -p 8501:8501 -v "$PWD:/app/work" meadm/genome-qc:busco
 ```
@@ -72,7 +72,7 @@ streamlit run streamlit_app.py
 
 Open the URL printed by Streamlit (usually http://localhost:8501) in your web browser.
 
-## How to use the app (step-by-step)
+## How To Use The App (Step-by-Step)
 
 1. Open the app in your browser.
 2. Use the "Upload genome FASTA files" section to upload one or more assemblies.
@@ -92,7 +92,7 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
 - BUSCO expects lineage datasets to be available. The app will use BUSCO's configuration/location; you can pre-download lineages to avoid network downloads.
 - If you provide a "Custom" lineage, make sure that lineage name is valid and available to BUSCO on the machine where the app runs.
 
-## For developers
+## For Developers
 
 To build Docker images locally:
 (Assuming you have cloned the repo and are in the project directory)
@@ -106,7 +106,7 @@ docker build --build-arg INCLUDE_BUSCO=true -t genome-qc:busco .
 ```
 Then run using the `docker run` commands above, but omit the `meadm` prefix to the image name.
 
-## Contributing and development
+## Contributing and Development
 
 Contributions, feedback, and feature requests are welcome! Please:
 
