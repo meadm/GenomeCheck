@@ -17,6 +17,17 @@ st.title("Genome QC and Similarity App")
 # Short description (subheader-sized) directly under the title
 st.subheader("Compute assembly metrics (N50, L90, GC%), run BUSCO completeness checks, and compare genomes with fastANI (clustered heatmap + neighbor‑joining tree).")
 
+# Initialize session-specific cache to prevent cross-talk between users
+if 'session_id' not in st.session_state:
+    import uuid
+    st.session_state.session_id = str(uuid.uuid4())
+    
+    # Clear any existing cached data from previous sessions
+    keys_to_clear = [key for key in st.session_state.keys() 
+                    if key.startswith(('fastani_', 'heatmap_', 'tree_', 'ani_', 'genome_', 'files_processed', 'temp_files_created'))]
+    for key in keys_to_clear:
+        del st.session_state[key]
+
 # Link to repository / documentation
 st.markdown(
     "<div style='background:#fff8e1;border-left:6px solid #ffd54f;padding:12px;border-radius:6px'>"
@@ -47,6 +58,12 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     st.write(f"{len(uploaded_files)} genomes uploaded")
+    
+    # Clear previous session data to prevent cross-talk between users
+    cache_keys_to_clear = [key for key in st.session_state.keys() 
+                          if key.startswith(('fastani_', 'heatmap_', 'tree_', 'ani_', 'genome_', 'files_processed', 'temp_files_created'))]
+    for key in cache_keys_to_clear:
+        del st.session_state[key]
 
     # BUSCO options
     st.write("---")
