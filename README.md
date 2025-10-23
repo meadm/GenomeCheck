@@ -14,7 +14,7 @@ An easy-to-use Streamlit application for basic genome quality control (QC) and s
 Use the hosted app here: [genomeqc.streamlit.app](https://genomeqc.streamlit.app/).
 
 <div align="center">
-  <img src="/docs/Header.png" width="600" style="border: 1px solid black;" alt="App header and File Upload bar">
+  <img src="/docs/Header.png" width="500" style="border: 1px solid black;" alt="App header and File Upload bar">
 </div>
 
 Notes:
@@ -84,7 +84,7 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
 2. Use the "Upload genome FASTA files" section to upload one or more assemblies.
 
 <div align="center">  
-  <img src="/docs/StatsTable.png" width="600" style="border: 1px solid black;" alt="Results table">
+  <img src="/docs/StatsTable.png" width="500" style="border: 1px solid black;" alt="Results table">
 </div>
 
 3. (Optional and disabled on Streamlit Community Cloud) Tick "Include BUSCO analysis" if you want completeness estimates.
@@ -97,7 +97,7 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
    - Download result images as PNG, PDF, SVG, or JPEG
 
 <div align="center">
-  <img src="/docs/ANIHeatmap.png" width="600" style="border: 1px solid black;" alt="ANI Heatmap">
+  <img src="/docs/ANIHeatmap.png" width="500" style="border: 1px solid black;" alt="ANI Heatmap">
 </div>
 
 ### Cleanup
