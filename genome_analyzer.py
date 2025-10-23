@@ -66,7 +66,7 @@ def compute_stats(fasta_file: str) -> Dict[str, Any]:
     }
 
 
-def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineage: str = "bacteria_odb10", cpus: int = 1) -> Optional[Dict[str, Any]]:
+def run_busco(fasta_file: str, output_dir: str = None, lineage: str = "bacteria_odb10", cpus: int = 1) -> Optional[Dict[str, Any]]:
     """Run BUSCO analysis on a FASTA file (Docker-optimized).
     
     Args:
@@ -78,13 +78,17 @@ def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineag
         Dictionary containing BUSCO results or None if BUSCO is not available
     """
     try:
+        # Determine session-specific output directory
+        if output_dir is None:
+            base_tmp = os.environ.get('SESSION_TEMP_DIR', './temp/')
+            output_dir = os.path.join(base_tmp, 'busco_results')
         # Create output directory
         os.makedirs(output_dir, exist_ok=True)
         
         # Get filename without extension for BUSCO output
         base_name = os.path.splitext(os.path.basename(fasta_file))[0]
-        busco_name = f"busco_{base_name}"
-        busco_output_dir = os.path.join(output_dir, busco_name)
+    busco_name = f"busco_{base_name}"
+    busco_output_dir = os.path.join(output_dir, busco_name)
 
         # Resolve BUSCO binary dynamically (works in Docker image where busco is on PATH)
         busco_bin = shutil.which("busco")
@@ -321,7 +325,8 @@ def all_vs_all_fastani(file_paths, threads=1) -> Tuple[np.ndarray, List[str], Di
     genome_names = [os.path.basename(fp) for fp in file_paths]
     errors: Dict[Tuple[int,int], str] = {}
     for i, j in itertools.combinations(range(n), 2):
-        out_file = f"./temp/fastani_{i}_{j}.txt"
+        base_tmp = os.environ.get('SESSION_TEMP_DIR', './temp/')
+        out_file = os.path.join(base_tmp, f"fastani_{i}_{j}.txt")
         try:
             ani = run_fastani(file_paths[i], file_paths[j], out_file, threads=threads)
             ani_matrix[i, j] = ani
