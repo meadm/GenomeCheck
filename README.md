@@ -125,6 +125,15 @@ docker build --build-arg INCLUDE_BUSCO=true -t genome-qc:busco .
 ```
 Then run using the `docker run` commands above, but omit the `meadm` prefix to the image name.
 
+## Releases — Docker Images & Example Data
+
+Docker images and example datasets are published on the project's GitHub Releases page. Each release contains:
+- pre-built Docker image archives (compressed `.tar.gz`) for different variants (e.g. `lean` / `busco`),
+- example data (e.g. `example-yeast-genomes.zip`),
+- checksums and optional signatures.
+
+Release page: https://github.com/meadm/genome_QC/releases
+
 ## Contributing and Development
 
 Contributions, feedback, and feature requests are welcome! Please:
