@@ -1,0 +1,47 @@
+# VCS
+.git
+.gitignore
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.ipynb_checkpoints/
+
+# OS/editor junk
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Streamlit/runtime
+.streamlit/
+*.log
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Build artifacts
+dist/
+build/
+.eggs/
+*.egg-info/
+
+# Large/local data
+data/
+results/
+temp/
+tmp/
+.cache/
+busco_downloads/
+busco_downloads/**
+
+# Secrets/config
+.env
+.env.*
+secrets.toml
