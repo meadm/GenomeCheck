@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import subprocess
 import shutil
+import shutil
 import json
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
@@ -66,66 +67,63 @@ def compute_stats(fasta_file: str) -> Dict[str, Any]:
     }
 
 
-def run_busco(fasta_file: str, output_dir: str = "./temp/busco_results/", lineage: str = "bacteria_odb10", cpus: int = 1) -> Optional[Dict[str, Any]]:
-    """Run BUSCO analysis on a FASTA file (Docker-optimized).
-    
-    Args:
-        fasta_file: Path to the FASTA file
-        output_dir: Directory to store BUSCO results
-        lineage: BUSCO lineage database to use (e.g., "bacteria_odb10", "eukaryota_odb10")
-        
-    Returns:
-        Dictionary containing BUSCO results or None if BUSCO is not available
+def run_busco(
+    fasta_file: str,
+    output_dir: str | None = None,
+    lineage: str = "bacteria_odb10",
+    cpus: int = 1,
+) -> Optional[Dict[str, Any]]:
+    """Run BUSCO analysis on a FASTA file.
+
+    Uses the SESSION_TEMP_DIR environment variable if present to isolate per-session
+    BUSCO outputs. Returns parsed BUSCO results or None on error/non-availability.
     """
+    # Determine session-specific output directory
+    if output_dir is None:
+        base_tmp = os.environ.get("SESSION_TEMP_DIR", "./temp/")
+        output_dir = os.path.join(base_tmp, "busco_results")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    base_name = os.path.splitext(os.path.basename(fasta_file))[0]
+    busco_name = f"busco_{base_name}"
+    busco_output_dir = os.path.join(output_dir, busco_name)
+
+    # Resolve BUSCO binary
+    busco_bin = shutil.which("busco")
+    if not busco_bin:
+        # BUSCO not available in this environment
+        return None
+
+    # Build and run the BUSCO command
+    cmd = [
+        busco_bin,
+        "-i",
+        fasta_file,
+        "-o",
+        busco_name,
+        "-m",
+        "genome",
+        "-f",
+        "-l",
+        lineage,
+        "--out_path",
+        output_dir,
+        "--cpu",
+        str(cpus),
+    ]
+
     try:
-        # Create output directory
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Get filename without extension for BUSCO output
-        base_name = os.path.splitext(os.path.basename(fasta_file))[0]
-        busco_name = f"busco_{base_name}"
-        busco_output_dir = os.path.join(output_dir, busco_name)
-
-        # Resolve BUSCO binary dynamically (works in Docker image where busco is on PATH)
-        busco_bin = shutil.which("busco")
-        if not busco_bin:
-            raise FileNotFoundError("BUSCO binary not found in PATH")
-
-        # Run BUSCO command
-        # cpus controls BUSCO's --cpu flag
-        cmd = [
-            busco_bin,
-            "-i", fasta_file,
-            "-o", busco_name,
-            "-m", "genome",
-            "-f",  # Force overwrite if output exists
-            "-l", lineage,
-            "--out_path", output_dir,
-            "--cpu", str(cpus)  # Limit CPU usage for container
-        ]
-
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
-        if result.returncode != 0:
-            # Bubble up full context so the caller/UI can render it
-            raise RuntimeError(
-                f"BUSCO failed (code {result.returncode}).\ncmd: {' '.join(cmd)}\nSTDERR:\n{result.stderr}\nSTDOUT:\n{result.stdout}"
-            )
-
-        # Parse BUSCO results
-        return parse_busco_results(busco_output_dir, lineage, busco_name)
-        
     except subprocess.TimeoutExpired:
-        print(f"BUSCO timed out for {fasta_file}")
         return None
-    except FileNotFoundError:
-        # BUSCO not available in this environment (e.g., Streamlit Cloud)
+
+    if result.returncode != 0:
+        # Return None so caller can continue; UI can surface stderr if desired
         return None
-    except ModuleNotFoundError:
-        print("BUSCO dependencies missing. Please install BUSCO with: conda install -c bioconda busco")
-        return None
-    except Exception as e:
-        print(f"Error running BUSCO: {e}")
-        return None
+
+    # Parse results if available
+    return parse_busco_results(busco_output_dir, lineage, busco_name)
 
 
 def parse_busco_results(busco_dir: str, lineage: str = "bacteria_odb10", busco_name: str = 'sample') -> Optional[Dict[str, Any]]:
@@ -321,7 +319,8 @@ def all_vs_all_fastani(file_paths, threads=1) -> Tuple[np.ndarray, List[str], Di
     genome_names = [os.path.basename(fp) for fp in file_paths]
     errors: Dict[Tuple[int,int], str] = {}
     for i, j in itertools.combinations(range(n), 2):
-        out_file = f"./temp/fastani_{i}_{j}.txt"
+        base_tmp = os.environ.get('SESSION_TEMP_DIR', './temp/')
+        out_file = os.path.join(base_tmp, f"fastani_{i}_{j}.txt")
         try:
             ani = run_fastani(file_paths[i], file_paths[j], out_file, threads=threads)
             ani_matrix[i, j] = ani

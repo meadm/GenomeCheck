@@ -17,6 +17,25 @@ st.title("Genome QC and Similarity App")
 # Short description (subheader-sized) directly under the title
 st.subheader("Compute assembly metrics (N50, L90, GC%), run BUSCO completeness checks, and compare genomes with fastANI (clustered heatmap + neighbor‑joining tree).")
 
+# Initialize session-specific cache to prevent cross-talk between users
+if 'session_id' not in st.session_state:
+    import uuid
+    st.session_state.session_id = str(uuid.uuid4())
+    
+    # Clear any existing cached data from previous sessions
+    keys_to_clear = [key for key in st.session_state.keys() 
+                    if key.startswith(('fastani_', 'heatmap_', 'tree_', 'ani_', 'genome_', 'files_processed', 'temp_files_created'))]
+    for key in keys_to_clear:
+        del st.session_state[key]
+    # Create a session-specific temporary directory and record it in session state
+    import os
+    session_temp = os.path.join('./temp_sessions', st.session_state.session_id)
+    st.session_state.session_temp = session_temp
+    # Export to environment so library code can pick it up
+    os.environ['SESSION_TEMP_DIR'] = session_temp
+    # Ensure the directory exists
+    file_handlers.create_temp_directory(session_temp)
+
 # Link to repository / documentation
 st.markdown(
     "<div style='background:#fff8e1;border-left:6px solid #ffd54f;padding:12px;border-radius:6px'>"
@@ -47,6 +66,12 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     st.write(f"{len(uploaded_files)} genomes uploaded")
+    
+    # Clear previous session data to prevent cross-talk between users
+    cache_keys_to_clear = [key for key in st.session_state.keys() 
+                          if key.startswith(('fastani_', 'heatmap_', 'tree_', 'ani_', 'genome_', 'files_processed', 'temp_files_created'))]
+    for key in cache_keys_to_clear:
+        del st.session_state[key]
 
     # BUSCO options
     st.write("---")
@@ -92,13 +117,16 @@ if uploaded_files:
         max_cpus = os.cpu_count() or 4
         busco_cpus = st.slider("BUSCO CPUs", min_value=1, max_value=max_cpus, value=min(4, max_cpus))
 
-    # Save uploaded files locally
-    file_handlers.create_temp_directory()
-    file_paths = file_handlers.save_uploaded_files(uploaded_files)
+    # Save uploaded files locally into session-specific temp directory
+    # Ensure session_temp exists (fallback to environment var)
+    session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR') or './temp/'
+    file_handlers.create_temp_directory(session_temp)
+    file_paths = file_handlers.save_uploaded_files(uploaded_files, directory_path=session_temp)
     st.session_state.temp_files_created = True
 
     # Process uploaded files
-    directory = './temp/'
+    # Processing directory (use the session-specific temp directory)
+    directory = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR', './temp/')
 
     # Import here to avoid loading at startup
     from genome_analyzer import process_directory
@@ -426,16 +454,20 @@ if uploaded_files:
     
     # Clean up on page refresh if files were created in this session
     if st.session_state.temp_files_created and not uploaded_files:
-        # If no files are uploaded but we had temp files, clean up
-        file_handlers.cleanup_temp_directory()
+        # If no files are uploaded but we had temp files, clean up this session's temp dir
+        session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
+        file_handlers.cleanup_temp_directory(session_temp)
         st.session_state.temp_files_created = False
         st.session_state.files_processed = False
     
     # Manual cleanup option
     if st.button("Clean up temporary files"):
-        file_handlers.cleanup_temp_directory()
+        session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
+        file_handlers.cleanup_temp_directory(session_temp)
         st.success("Temporary files cleaned up!")
         st.rerun()
     
     # Register automatic cleanup (runs when Python process exits)
-    file_handlers.register_cleanup_on_exit()
+    # Register cleanup for this session directory on process exit
+    session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
+    file_handlers.register_cleanup_on_exit(session_temp)
