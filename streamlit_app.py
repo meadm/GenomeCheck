@@ -186,14 +186,18 @@ if uploaded_files:
             if not custom_filename.strip():
                 custom_filename = default_filename
             
+            # Create two columns for the download buttons
+            col1, col2 = st.columns(2)
+            
             # CSV export
             csv_data = df.to_csv(index=False)
-            st.download_button(
-                label="Download as CSV",
-                data=csv_data,
-                file_name=f"{custom_filename}.csv",
-                mime="text/csv"
-            )
+            with col1:
+                st.download_button(
+                    label="Download as CSV",
+                    data=csv_data,
+                    file_name=f"{custom_filename}.csv",
+                    mime="text/csv"
+                )
             
             # Excel export
             import io
@@ -202,12 +206,13 @@ if uploaded_files:
                 df.to_excel(writer, index=False, sheet_name='Genome QC Results')
             excel_data = buffer.getvalue()
             
-            st.download_button(
-                label="Download as Excel",
-                data=excel_data,
-                file_name=f"{custom_filename}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            with col2:
+                st.download_button(
+                    label="Download as Excel",
+                    data=excel_data,
+                    file_name=f"{custom_filename}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
     #fastANI section
     st.write("---")
