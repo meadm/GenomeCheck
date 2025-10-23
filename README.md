@@ -13,8 +13,9 @@ An easy-to-use Streamlit application for basic genome quality control (QC) and s
 
 Use the hosted app here: [genomeqc.streamlit.app](https://genomeqc.streamlit.app/).
 
-<img src="/docs/Header.png" width="400" alt="App header and File Upload bar">
-
+<div align="center">
+  <img src="/docs/Header.png" width="400" style="border: 1px solid black;" alt="App header and File Upload bar">
+</div>
 
 Notes:
 - BUSCO is disabled on the hosted Cloud app. For BUSCO features, use the BUSCO-enabled Docker image or run locally.
@@ -81,7 +82,9 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
 
 1. Open the app in your browser.
 2. Use the "Upload genome FASTA files" section to upload one or more assemblies.
-<img src="/docs/StatsTable.png" width="400" alt="Results table">
+<div align="center">  
+  <img src="/docs/StatsTable.png" width="600" style="border: 1px solid black;" alt="Results table">
+</div>
 3. (Optional and disabled on Streamlit Community Cloud) Tick "Include BUSCO analysis" if you want completeness estimates.
    - If you do, choose a lineage from the dropdown or select "Custom" and paste your lineage name.
    - Choose the number of CPUs with the slider (default: 4). This controls BUSCO parallelism and speeds up runs on multi-core machines.
@@ -90,7 +93,9 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
 4. (Optional) Run the "Run all-vs-all fastANI analysis" button to compute pairwise ANI across uploaded genomes and generate a clustered heatmap + tree.
    - Note that fastANI is *estimating* whole genome simlilarity so the output trees may not be phylogenetically correct.
    - Download result images as PNG, PDF, SVG, or JPEG
-<img src="/docs/ANIHeatmap.png" width="400" alt="ANI Heatmap">
+<div align="center">
+  <img src="/docs/ANIHeatmap.png" width="400" style="border: 1px solid black;" alt="ANI Heatmap">
+</div>
 ### Cleanup
 - Use the "Clean up temporary files" button to free up disk space after analysis or to reset the app if old results are still present.
 - Temporary files are automatically cleaned up when you refresh the page or upload new files
