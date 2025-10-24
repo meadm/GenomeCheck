@@ -1,0 +1,13 @@
+name: genome_qc
+channels:
+  - conda-forge
+  - nodefaults
+  - bioconda
+dependencies:
+  - python=3.12.5
+  - biopython
+  - openpyxl
+  - fastani
+  - scikit-bio
+  - seaborn
+  - streamlit

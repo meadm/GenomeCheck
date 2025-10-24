@@ -53,24 +53,20 @@ cd genome_QC
 
 1. Create the environment from the `environment.yml` file and activate it:
 
+*Note that `environment_local.yml` is used for local installation and `environment.yml` is used by Streamlit Community cloud*
+
 ```bash
-mamba env create -f environment.yml  # or: conda env create -f environment.yml
+mamba env create -f environment_local.yml  # or: conda env create -f environment_local.yml
 conda activate genome_qc
 ```
 
-2. Install Streamlit (if not already present in the environment):
-
-```bash
-pip install streamlit
-```
-
-3. BUSCO is NOT included in the distributed `environment.yml` to keep installs lighter. If you need BUSCO locally, install it separately:
+2. BUSCO is NOT included in the distributed `environment.yml` to keep installs lighter. If you need BUSCO locally, install it separately:
 
 ```bash
 conda install -c conda-forge -c bioconda busco=6.0.0
 ```
 
-4. Run the app:
+3. Run the app:
 
 ```bash
 streamlit run streamlit_app.py
