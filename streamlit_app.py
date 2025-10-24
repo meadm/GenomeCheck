@@ -24,7 +24,7 @@ if 'session_id' not in st.session_state:
     
     # Clear any existing cached data from previous sessions
     keys_to_clear = [key for key in st.session_state.keys() 
-                    if key.startswith(('fastani_', 'heatmap_', 'tree_', 'ani_', 'genome_', 'files_processed', 'temp_files_created'))]
+                    if key.startswith(('fastani_', 'heatmap_', 'tree_', 'ani_', 'genome_', 'qc_', 'files_processed', 'temp_files_created'))]
     for key in keys_to_clear:
         del st.session_state[key]
     # Create a session-specific temporary directory and record it in session state
@@ -156,17 +156,24 @@ if uploaded_files:
                         stats["File"] = fname.rsplit('.', 1)[0]
                     results.append(stats)
                     progress.progress(int(((idx+1) / total) * 100))
-                # build dataframe from results
+                # build dataframe from results and cache in session
                 df = pd.DataFrame(results)
+                st.session_state.qc_df = df
                 # Mark that files have been processed for session cleanup
                 st.session_state.files_processed = True
     else:
         # Non-BUSCO path can run immediately
         with st.spinner("Analyzing genomes..."):
             df = process_directory(directory, include_busco=False)
+            # cache non-BUSCO results as well
+            st.session_state.qc_df = df
             st.session_state.files_processed = True
     
     # Display results only when available
+    # If we don't have a freshly computed df, check cached session results
+    if df is None and st.session_state.get('qc_df') is not None:
+        df = st.session_state.get('qc_df')
+
     if df is None:
         st.info("No analysis results yet. If you selected BUSCO, choose a lineage and click 'Run analysis'.")
     else:

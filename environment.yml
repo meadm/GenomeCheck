@@ -10,3 +10,4 @@ dependencies:
   - fastani
   - scikit-bio
   - seaborn
+  - streamlit
