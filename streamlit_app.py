@@ -12,7 +12,7 @@ from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbo
 from scipy.cluster.hierarchy import linkage, leaves_list
 from version import __version__
 
-st.title("GenomeCheck")
+st.title("GenomeCheck ✅")
 
 # Short description (subheader-sized) directly under the title
 st.subheader("Quickly assess, compare, and verify genome assemblies - all without the command line!")
