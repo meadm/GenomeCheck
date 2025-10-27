@@ -12,10 +12,10 @@ from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbo
 from scipy.cluster.hierarchy import linkage, leaves_list
 from version import __version__
 
-st.title("GenomeCheck - Compare and verify genomes without the command line")
+st.title("GenomeCheck")
 
 # Short description (subheader-sized) directly under the title
-st.subheader("Compute assembly metrics (N50, L90, GC%), run BUSCO completeness checks, and compare genomes with fastANI (clustered heatmap + neighbor‑joining tree).")
+st.subheader("Quickly assess, compare, and verify genome assemblies - all without the command line!")
 
 # Initialize session-specific cache to prevent cross-talk between users
 if 'session_id' not in st.session_state:
