@@ -312,7 +312,7 @@ if uploaded_files:
                 with cols[i]:
                     data = st.session_state.get('heatmap_bytes', {}).get(fmt) if st.session_state.get('heatmap_bytes') else None
                     if data:
-                        st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime)
+                        st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime, key=f"heatmap_download_{fmt}")
                     else:
                         st.write("-")
 
@@ -332,7 +332,7 @@ if uploaded_files:
                     with tree_cols[i]:
                         data = st.session_state['tree_bytes'].get(fmt)
                         if data:
-                            st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime)
+                            st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime, key=f"tree_download_{fmt}")
                         else:
                             st.write("-")
 
@@ -420,7 +420,7 @@ if uploaded_files:
                 with cols[i]:
                     data = st.session_state['heatmap_bytes'].get(fmt)
                     if data:
-                        st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime)
+                        st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime, key=f"cached_heatmap_download_{fmt}")
                     else:
                         st.write("-")
             # Show neighbor-joining tree (rendered with Biopython/Matplotlib)
@@ -486,7 +486,7 @@ if uploaded_files:
                             with tree_cols[i]:
                                 data = st.session_state['tree_bytes'].get(fmt)
                                 if data:
-                                    st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime)
+                                    st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime, key=f"cached_tree_download_{fmt}")
                                 else:
                                     st.write("-")
 
