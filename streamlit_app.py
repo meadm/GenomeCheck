@@ -163,7 +163,6 @@ if uploaded_files:
     # Import here to avoid loading at startup
     from genome_analyzer import process_directory
 
-    df = None
     # If BUSCO analysis requested, require the user to confirm lineage and click Run
     df = None
     if include_busco:
@@ -344,6 +343,13 @@ if uploaded_files:
                 st.write("Neighbor-joining tree not available.")
 
         if run_button:
+            # Clear previous cached data before new analysis
+            st.session_state.pop('heatmap_bytes', None)
+            st.session_state.pop('heatmap_preview', None)
+            st.session_state.pop('tree_bytes', None)
+            st.session_state.pop('tree_newick', None)
+            st.session_state['fastani_done'] = False
+            
             with st.spinner("Running fastANI comparisons..."):
                 ani_matrix, genome_names, fastani_errors = all_vs_all_fastani(file_paths)
             if fastani_errors:
@@ -384,10 +390,6 @@ if uploaded_files:
                 ("jpeg", "image/jpeg"),
             ]
 
-            # Clear previous cached images if a new analysis was just run
-            st.session_state.pop('heatmap_bytes', None)
-            st.session_state.pop('heatmap_preview', None)
-
             heatmap_bytes = {}
             for fmt, mime in buf_formats:
                 try:
@@ -402,9 +404,10 @@ if uploaded_files:
                     heatmap_bytes[fmt] = None
                     st.warning(f"Could not create {fmt} for heatmap: {e}")
 
-            # Cache preview (PNG) and all bytes
+            # Store bytes in session state before showing downloads
             st.session_state['heatmap_bytes'] = heatmap_bytes
             st.session_state['heatmap_preview'] = heatmap_bytes.get('png')
+            st.session_state['fastani_done'] = True
 
             # Persist outputs to disk so downloads survive reruns
             outputs_dir = os.path.join(st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR'), 'outputs')
@@ -454,7 +457,6 @@ if uploaded_files:
                             st.pyplot(fig)
 
                         # Cache tree images and show download buttons from cache
-                        st.session_state.pop('tree_bytes', None)
                         tree_bytes = {}
                         for fmt, mime in buf_formats:
                             try:
@@ -469,7 +471,8 @@ if uploaded_files:
                                 tree_bytes[fmt] = None
                                 st.warning(f"Could not create {fmt} for tree: {e}")
 
-                        st.session_state['tree_bytes'] = tree_bytes
+                        st.session_state['tree_bytes'] = tree_bytes 
+                        st.session_state['tree_newick'] = tree_newick
                         # persist tree bytes and newick
                         outputs_dir = os.path.join(st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR'), 'outputs')
                         os.makedirs(outputs_dir, exist_ok=True)
