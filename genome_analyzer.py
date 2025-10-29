@@ -332,14 +332,6 @@ def all_vs_all_fastani(file_paths, threads=1) -> Tuple[np.ndarray, List[str], Di
     np.fill_diagonal(ani_matrix, 100.0)
     return ani_matrix, genome_names, errors
 
-
-def compute_distance_matrix(ani_matrix):
-    """
-    Convert ANI matrix to a distance matrix (1 - ANI/100).
-    """
-    return 1 - (ani_matrix / 100.0)
-
-
 def neighbor_joining_tree(distance_matrix, genome_names):
     """
     Build a neighbor-joining tree from a distance matrix.

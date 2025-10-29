@@ -1,4 +1,4 @@
-name: genome_qc
+name: GenomeCheck
 channels:
   - conda-forge
   - nodefaults

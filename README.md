@@ -1,4 +1,4 @@
-# Genome QC App
+# GenomeCheck ✅
 
 An easy-to-use Streamlit application for basic genome quality control (QC) and similarity analysis. The app will compute common assembly metrics (N50, L90, GC%), optionally runs [BUSCO](https://busco.ezlab.org/) for genome completeness, and can estimate pairwise Average Nucleotide Identity (ANI) with [fastANI](https://www.nature.com/articles/s41467-018-07641-9) before showing a clustered heatmap and tree.
 
@@ -11,7 +11,7 @@ An easy-to-use Streamlit application for basic genome quality control (QC) and s
 
 ## Streamlit Community Cloud
 
-Use the hosted app here: [genomeqc.streamlit.app](https://genomeqc.streamlit.app/).
+Use the hosted app here: [genomecheck.streamlit.app](https://genomecheck.streamlit.app/).
 
 <div align="center">
   <img src="/docs/Header.png" width="500" style="border: 1px solid black;" alt="App header and File Upload bar">
@@ -30,12 +30,12 @@ Notes:
 
 **Basic Version (No BUSCO):**
 ```bash
-docker run --rm -p 8501:8501 meadm/genome-qc:latest
+docker run --rm -p 8501:8501 meadm/genomecheck:latest
 ```
 
 **BUSCO-Enabled Version:**
 ```bash
-docker run --rm -p 8501:8501 -v "$PWD:/app/work" meadm/genome-qc:busco
+docker run --rm -p 8501:8501 -v "$PWD:/app/work" meadm/genomecheck:busco
 ```
 
 Then open the URL the command line displays (it should be something like http://0.0.0.0:8501) in your browser.
@@ -47,17 +47,19 @@ These steps assume you have conda/mamba available (e.g., via [Miniforge3](https:
 0. Clone this repository and enter the project directory:
 
 ```bash
-git clone https://github.com/meadm/genome_QC.git
-cd genome_QC
+git clone https://github.com/meadm/GenomeCheck.git
+cd GenomeCheck
 ```
 
 1. Create the environment from the `environment.yml` file and activate it:
 
 *Note that `environment_local.yml` is used for local installation and `environment.yml` is used by Streamlit Community cloud*
 
+*Note that `environment_local.yml` is used for local installation and `environment.yml` is used by Streamlit Community cloud*
+
 ```bash
 mamba env create -f environment_local.yml  # or: conda env create -f environment_local.yml
-conda activate genome_qc
+conda activate GenomeCheck
 ```
 
 2. BUSCO is NOT included in the distributed `environment.yml` to keep installs lighter. If you need BUSCO locally, install it separately:
@@ -114,10 +116,10 @@ To build Docker images locally:
 
 ```bash
 # Lean image (default; no BUSCO)
-docker build -t genome-qc:latest .
+docker build -t genomecheck:latest .
 
 # BUSCO-enabled image
-docker build --build-arg INCLUDE_BUSCO=true -t genome-qc:busco .
+docker build --build-arg INCLUDE_BUSCO=true -t genomecheck:busco .
 ```
 Then run using the `docker run` commands above, but omit the `meadm` prefix to the image name.
 
@@ -128,7 +130,7 @@ Docker images and example datasets are published on the project's GitHub Release
 - example data (e.g. `example-yeast-genomes.zip`),
 - checksums and optional signatures.
 
-Release page: https://github.com/meadm/genome_QC/releases
+Release page: https://github.com/meadm/GenomeCheck/releases
 
 ## Contributing and Development
 
