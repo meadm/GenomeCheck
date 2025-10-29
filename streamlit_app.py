@@ -47,14 +47,12 @@ st.markdown(
 # Version info
 st.caption(f"Version: {__version__}")
 
-# -------------------------
-# 1. File Upload
-# -------------------------
+# File Upload
 # Small spacer before the uploader for visual separation
-#st.write("")
 # Slightly smaller-than-subheader upload label rendered via Markdown
 st.write("---")
 st.subheader("Upload Genome FASTA Files")
+
 # file_uploader requires a non-empty label for accessibility; hide the label visually
 uploaded_files = st.file_uploader(
     "Upload genome FASTA files (hidden label)",
@@ -103,12 +101,12 @@ if uploaded_files:
                 ("custom", "Custom lineage (enter manually)")
             ],
             format_func=lambda x: x[1],
-            help="Choose the appropriate lineage for your organisms. Bacteria for prokaryotes, Eukaryota for eukaryotes, Archaea for archaea."
+            help="Choose the appropriate lineage for your organisms."
         )
         
         # Extract the lineage code or allow custom input
         if busco_lineage[0] == "custom":
-            custom_lineage = st.text_input("Enter custom BUSCO lineage (e.g. my_lineage_odb10):", value="")
+            custom_lineage = st.text_input("Enter custom BUSCO lineage (e.g. fungi_odb10):", value="")
             lineage_code = custom_lineage.strip()
         else:
             lineage_code = busco_lineage[0]
@@ -123,7 +121,6 @@ if uploaded_files:
     st.session_state.temp_files_created = True
 
     # Process uploaded files
-    # Processing directory (use the session-specific temp directory)
     directory = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
 
     # Import here to avoid loading at startup
@@ -146,7 +143,7 @@ if uploaded_files:
                     fname = os.path.basename(fp)
                     status.text(f"Running BUSCO for {fname} ({idx+1}/{total})")
                     stats = compute_stats_with_busco(fp, lineage=lineage_code, cpus=busco_cpus)
-                    # ensure File column present
+                    # ensure File column is present
                     if stats is None:
                         stats = {"File": fname.rsplit('.', 1)[0]}
                     else:
@@ -250,11 +247,6 @@ if uploaded_files:
     st.subheader("All-vs-All fastANI Comparison & Similarity Visualization")
 
     if uploaded_files and len(file_paths) >= 2:
-        # If results cached in session_state, preload them (but don't render yet)
-        if st.session_state.get('fastani_done'):
-            ani_matrix = st.session_state.get('ani_matrix')
-            genome_names = st.session_state.get('genome_names')
-            
         # Create button for running analysis
         run_button = st.button("Run all-vs-all fastANI analysis")
         
@@ -284,13 +276,8 @@ if uploaded_files:
                     with open(newick_path, 'r') as f:
                         st.session_state['tree_newick'] = f.read()
 
-                # Restore genome names from cache file if it exists
+                # Restore genome names
                 st.session_state.genome_names = [os.path.basename(fp) for fp in file_paths]
-                #genome_names = []
-                # names_path = os.path.join(outputs_dir, 'genome_names.txt')
-                # if os.path.exists(names_path):
-                #     with open(names_path, 'r') as f:
-                #         st.session_state['genome_names'] = [line.strip() for line in f]
 
                 if heatmap_bytes:
                     st.session_state['heatmap_bytes'] = heatmap_bytes
@@ -424,7 +411,6 @@ if uploaded_files:
             # Update session state
             st.session_state['heatmap_bytes'] = heatmap_bytes
             st.session_state['fastani_done'] = True
-            #st.session_state.heatmap_preview = heatmap_bytes.get('png')
 
             # Show downloads in one row using cached bytes
             cols = st.columns(len(buf_formats))
@@ -435,6 +421,7 @@ if uploaded_files:
                         st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime, key=f"cached_heatmap_download_{fmt}")
                     else:
                         st.write("-")
+            
             # Show neighbor-joining tree (rendered with Biopython/Matplotlib)
             st.write("### Neighbor-Joining Tree")
             if len(genome_names) < 3:
