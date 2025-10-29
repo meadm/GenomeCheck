@@ -55,8 +55,6 @@ cd GenomeCheck
 
 *Note that `environment_local.yml` is used for local installation and `environment.yml` is used by Streamlit Community cloud*
 
-*Note that `environment_local.yml` is used for local installation and `environment.yml` is used by Streamlit Community cloud*
-
 ```bash
 mamba env create -f environment_local.yml  # or: conda env create -f environment_local.yml
 conda activate GenomeCheck
