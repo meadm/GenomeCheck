@@ -8,8 +8,7 @@ import numpy as np
 import io
 from io import StringIO
 from Bio import Phylo
-from genome_analyzer import all_vs_all_fastani, compute_distance_matrix, neighbor_joining_tree
-from scipy.cluster.hierarchy import linkage, leaves_list
+from genome_analyzer import all_vs_all_fastani, neighbor_joining_tree
 from version import __version__
 
 st.title("GenomeCheck ✅")
@@ -35,45 +34,13 @@ if 'session_id' not in st.session_state:
     os.environ['SESSION_TEMP_DIR'] = session_temp
     # Ensure the directory exists
     file_handlers.create_temp_directory(session_temp)
-    # Try to load any previously persisted fastANI outputs for this session
-    outputs_dir = os.path.join(session_temp, 'outputs')
-    if os.path.exists(outputs_dir):
-        # load heatmap bytes
-        hb = {}
-        for fmt in ("png", "pdf", "svg", "jpeg"):
-            p = os.path.join(outputs_dir, f"ani_heatmap.{fmt}")
-            if os.path.exists(p):
-                with open(p, 'rb') as fh:
-                    hb[fmt] = fh.read()
-        if hb:
-            st.session_state['heatmap_bytes'] = hb
-            st.session_state['heatmap_preview'] = hb.get('png')
-
-        # load tree bytes
-        tb = {}
-        for fmt in ("png", "pdf", "svg", "jpeg"):
-            p = os.path.join(outputs_dir, f"nj_tree.{fmt}")
-            if os.path.exists(p):
-                with open(p, 'rb') as fh:
-                    tb[fmt] = fh.read()
-        if tb:
-            st.session_state['tree_bytes'] = tb
-
-        # load newick text
-        newick_p = os.path.join(outputs_dir, 'tree_newick.txt')
-        if os.path.exists(newick_p):
-            with open(newick_p, 'r') as fh:
-                st.session_state['tree_newick'] = fh.read()
-        # mark fastani done if any outputs present
-        if st.session_state.get('heatmap_bytes') or st.session_state.get('tree_bytes'):
-            st.session_state['fastani_done'] = True
 
 # Link to repository / documentation
 st.markdown(
     "<div style='background:#fff8e1;border-left:6px solid #ffd54f;padding:12px;border-radius:6px'>"
     "<h3 style='margin:0'>📘 Repository & Documentation</h2>"
-    "<p style='margin:6px 0 0'>Visit the project on GitHub for full docs, releases, and example data: "
-    "<a href='https://github.com/meadm/genome_QC' target='_blank' rel='noopener' style='font-weight:600'>github.com/meadm/genome_QC</a></p></div>",
+    "<p style='margin:6px 0 0'>Visit <a href='https://github.com/meadm/GenomeCheck' target='_blank' rel='noopener'>the project on GitHub</a> for full docs, releases, and example data.</p>"
+    "</div>",
     unsafe_allow_html=True,
 )
 
@@ -151,14 +118,13 @@ if uploaded_files:
 
     # Save uploaded files locally into session-specific temp directory
     # Ensure session_temp exists (fallback to environment var)
-    session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR') or './temp/'
-    file_handlers.create_temp_directory(session_temp)
+    session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
     file_paths = file_handlers.save_uploaded_files(uploaded_files, directory_path=session_temp)
     st.session_state.temp_files_created = True
 
     # Process uploaded files
     # Processing directory (use the session-specific temp directory)
-    directory = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR', './temp/')
+    directory = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
 
     # Import here to avoid loading at startup
     from genome_analyzer import process_directory
@@ -288,14 +254,56 @@ if uploaded_files:
         if st.session_state.get('fastani_done'):
             ani_matrix = st.session_state.get('ani_matrix')
             genome_names = st.session_state.get('genome_names')
+            
+        # Create button for running analysis
         run_button = st.button("Run all-vs-all fastANI analysis")
+        
+        # Try to restore cached results from disk if they're not in session state
+        if not st.session_state.get('fastani_done'):
+            outputs_dir = os.path.join(st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR', './temp/'), 'outputs')
+            if os.path.exists(outputs_dir):
+                # Restore heatmap bytes
+                heatmap_bytes = {}
+                tree_bytes = {}
+                for fmt in ["png", "pdf", "svg", "jpeg"]:
+                    # Restore heatmap
+                    heatmap_path = os.path.join(outputs_dir, f"ani_heatmap.{fmt}")
+                    if os.path.exists(heatmap_path):
+                        with open(heatmap_path, 'rb') as f:
+                            heatmap_bytes[fmt] = f.read()
+                    
+                    # Restore tree
+                    tree_path = os.path.join(outputs_dir, f"nj_tree.{fmt}")
+                    if os.path.exists(tree_path):
+                        with open(tree_path, 'rb') as f:
+                            tree_bytes[fmt] = f.read()
+                
+                # Restore tree newick text if it exists
+                newick_path = os.path.join(outputs_dir, 'tree_newick.txt')
+                if os.path.exists(newick_path):
+                    with open(newick_path, 'r') as f:
+                        st.session_state['tree_newick'] = f.read()
+
+                # Restore genome names from cache file if it exists
+                st.session_state.genome_names = [os.path.basename(fp) for fp in file_paths]
+                #genome_names = []
+                # names_path = os.path.join(outputs_dir, 'genome_names.txt')
+                # if os.path.exists(names_path):
+                #     with open(names_path, 'r') as f:
+                #         st.session_state['genome_names'] = [line.strip() for line in f]
+
+                if heatmap_bytes:
+                    st.session_state['heatmap_bytes'] = heatmap_bytes
+                    st.session_state['heatmap_preview'] = heatmap_bytes.get('png')
+                    st.session_state['tree_bytes'] = tree_bytes
+                    st.session_state['fastani_done'] = True
 
         # If we have cached results and the user did NOT press Run now, render cached outputs and downloads
         if st.session_state.get('fastani_done') and not run_button:
             st.write("**ANI Similarity Heatmap and Dendrogram (cached)**")
             # Show cached preview if available
             if st.session_state.get('heatmap_preview'):
-                st.image(st.session_state['heatmap_preview'])
+                st.image(st.session_state.heatmap_preview)
             else:
                 st.write("(No heatmap preview available)")
 
@@ -339,9 +347,6 @@ if uploaded_files:
                     with st.expander("Newick format text (cached)"):
                         st.code(st.session_state.get('tree_newick', ''))
 
-            else:
-                st.write("Neighbor-joining tree not available.")
-
         if run_button:
             # Clear previous cached data before new analysis
             st.session_state.pop('heatmap_bytes', None)
@@ -361,7 +366,6 @@ if uploaded_files:
             ani_matrix = np.nan_to_num(ani_matrix, nan=0.0)
             # Show clustermap (dendrogram + heatmap)
             st.write("**ANI Similarity Heatmap and Dendrogram**")
-            #st.write("### ANI Heatmap with Dendrogram")
             cg = sns.clustermap(
                 ani_matrix,
                 metric="euclidean",
@@ -373,11 +377,15 @@ if uploaded_files:
                 yticklabels=genome_names,
                 figsize=(10, 8)
             )
-            # Show preview from cache if available (prevents disappearance after download)
-            if st.session_state.get('heatmap_preview'):
-                st.image(st.session_state['heatmap_preview'])
-            else:
-                st.pyplot(cg.figure)
+            
+            # Save figure as bytes for preview
+            preview_buf = io.BytesIO()
+            cg.figure.savefig(preview_buf, format='png', bbox_inches='tight')
+            preview_buf.seek(0)
+            st.session_state.heatmap_preview = preview_buf.getvalue()
+            
+            # Display the heatmap
+            st.image(st.session_state.heatmap_preview)
 
             # Export DPI selector for raster formats
             dpi = st.selectbox("Export resolution (DPI) for PNG/JPEG", options=[72, 150, 300], index=1)
@@ -390,7 +398,11 @@ if uploaded_files:
                 ("jpeg", "image/jpeg"),
             ]
 
+            # Save all formats and update session state
             heatmap_bytes = {}
+            outputs_dir = os.path.join(st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR', './temp/'), 'outputs')
+            os.makedirs(outputs_dir, exist_ok=True)
+            
             for fmt, mime in buf_formats:
                 try:
                     buf = io.BytesIO()
@@ -399,23 +411,20 @@ if uploaded_files:
                     else:
                         cg.figure.savefig(buf, format=fmt, bbox_inches='tight')
                     buf.seek(0)
-                    heatmap_bytes[fmt] = buf.getvalue()
+                    bytes_data = buf.getvalue()
+                    heatmap_bytes[fmt] = bytes_data
+                    
+                    # Save to disk for persistence
+                    with open(os.path.join(outputs_dir, f"ani_heatmap.{fmt}"), 'wb') as f:
+                        f.write(bytes_data)
                 except Exception as e:
                     heatmap_bytes[fmt] = None
                     st.warning(f"Could not create {fmt} for heatmap: {e}")
 
-            # Store bytes in session state before showing downloads
+            # Update session state
             st.session_state['heatmap_bytes'] = heatmap_bytes
-            st.session_state['heatmap_preview'] = heatmap_bytes.get('png')
             st.session_state['fastani_done'] = True
-
-            # Persist outputs to disk so downloads survive reruns
-            outputs_dir = os.path.join(st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR'), 'outputs')
-            os.makedirs(outputs_dir, exist_ok=True)
-            for fmt, data in heatmap_bytes.items():
-                if data:
-                    with open(os.path.join(outputs_dir, f"ani_heatmap.{fmt}"), 'wb') as fh:
-                        fh.write(data)
+            #st.session_state.heatmap_preview = heatmap_bytes.get('png')
 
             # Show downloads in one row using cached bytes
             cols = st.columns(len(buf_formats))
@@ -470,20 +479,14 @@ if uploaded_files:
                             except Exception as e:
                                 tree_bytes[fmt] = None
                                 st.warning(f"Could not create {fmt} for tree: {e}")
-
+                        # Save tree newick to disk for persistence
+                        with open(os.path.join(outputs_dir, 'tree_newick.txt'), 'w') as f:
+                            f.write(tree_newick)
+                        for fmt in buf_formats:
+                            # Save to disk
+                            with open(os.path.join(outputs_dir, f"nj_tree.{fmt[0]}"), 'wb') as f:
+                                f.write(tree_bytes[fmt[0]])
                         st.session_state['tree_bytes'] = tree_bytes 
-                        st.session_state['tree_newick'] = tree_newick
-                        # persist tree bytes and newick
-                        outputs_dir = os.path.join(st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR'), 'outputs')
-                        os.makedirs(outputs_dir, exist_ok=True)
-                        for fmt, data in tree_bytes.items():
-                            if data:
-                                with open(os.path.join(outputs_dir, f"nj_tree.{fmt}"), 'wb') as fh:
-                                    fh.write(data)
-                        # persist newick text
-                        if tree_newick:
-                            with open(os.path.join(outputs_dir, 'tree_newick.txt'), 'w') as fh:
-                                fh.write(tree_newick)
                         tree_cols = st.columns(len(buf_formats))
                         for i, (fmt, mime) in enumerate(buf_formats):
                             with tree_cols[i]:
@@ -507,60 +510,6 @@ if uploaded_files:
                 with st.expander("Newick format text"):
                     st.code(tree_newick or "")
 
-            # Persisted cached outputs: if a previous fastANI run completed in this session,
-            # allow users to view/download the generated images even if the uploader state
-            # is not present (e.g., after a rerun or widget interaction).
-            if st.session_state.get('fastani_done') and not (uploaded_files and len(file_paths) >= 2 and st.session_state.get('fastani_done')):
-                st.write("---")
-                st.write("**ANI Similarity Heatmap and Dendrogram (cached)**")
-                # Show cached preview if available
-                if st.session_state.get('heatmap_preview'):
-                    st.image(st.session_state['heatmap_preview'])
-                else:
-                    st.write("(No heatmap preview available)")
-
-                # Show cached download buttons in one row
-                buf_formats = [
-                    ("png", "image/png"),
-                    ("pdf", "application/pdf"),
-                    ("svg", "image/svg+xml"),
-                    ("jpeg", "image/jpeg"),
-                ]
-                cols = st.columns(len(buf_formats))
-                for i, (fmt, mime) in enumerate(buf_formats):
-                    with cols[i]:
-                        data = st.session_state.get('heatmap_bytes', {}).get(fmt) if st.session_state.get('heatmap_bytes') else None
-                        if data:
-                            st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"ani_heatmap.{fmt}", mime=mime)
-                        else:
-                            st.write("-")
-
-                # Tree section from cache
-                st.write("### Neighbor-Joining Tree")
-                if len(st.session_state.get('genome_names', [])) < 3:
-                    st.info("Tree not generated: need at least 3 genomes to build a neighbor-joining tree.")
-                elif st.session_state.get('tree_bytes'):
-                    tree_preview = st.session_state['tree_bytes'].get('png')
-                    if tree_preview:
-                        st.image(tree_preview)
-                    else:
-                        st.write("(No tree preview available)")
-
-                    tree_cols = st.columns(len(buf_formats))
-                    for i, (fmt, mime) in enumerate(buf_formats):
-                        with tree_cols[i]:
-                            data = st.session_state['tree_bytes'].get(fmt)
-                            if data:
-                                st.download_button(label=f"{fmt.upper()}", data=data, file_name=f"nj_tree.{fmt}", mime=mime)
-                            else:
-                                st.write("-")
-
-                    if len(st.session_state.get('genome_names', [])) >= 3:
-                        with st.expander("Newick format text (cached)"):
-                            st.code(st.session_state.get('tree_newick', ''))
-                else:
-                    st.write("Neighbor-joining tree not available.")
-
     # Session-based cleanup
     if 'files_processed' not in st.session_state:
         st.session_state.files_processed = False
@@ -569,21 +518,15 @@ if uploaded_files:
     # Clean up on page refresh if files were created in this session
     if st.session_state.temp_files_created and not uploaded_files:
         # If no files are uploaded but we had temp files, clean up this session's temp dir
-        # Do not remove cached fastANI outputs so users can download without re-running
-        if not st.session_state.get('fastani_done'):
-            session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
-            file_handlers.cleanup_temp_directory(session_temp)
-            st.session_state.temp_files_created = False
-            st.session_state.files_processed = False
+        file_handlers.cleanup_temp_directory()
+        st.session_state.temp_files_created = False
+        st.session_state.files_processed = False
     
     # Manual cleanup option
     if st.button("Clean up temporary files"):
-        session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
-        file_handlers.cleanup_temp_directory(session_temp)
+        file_handlers.cleanup_temp_directory()
         st.success("Temporary files cleaned up!")
         st.rerun()
     
     # Register automatic cleanup (runs when Python process exits)
-    # Register cleanup for this session directory on process exit
-    session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
     file_handlers.register_cleanup_on_exit(session_temp)
