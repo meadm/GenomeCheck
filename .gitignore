@@ -10,6 +10,7 @@ __pycache__/
 *.pyd
 
 # Temporary files
+temp*
 temp/
 temp/busco_results/
 

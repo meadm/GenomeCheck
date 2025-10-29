@@ -35,7 +35,7 @@ build/
 # Large/local data
 data/
 results/
-temp/
+temp*
 tmp/
 .cache/
 busco_downloads/
