@@ -118,9 +118,11 @@ if uploaded_files:
     # Ensure session_temp exists (fallback to environment var or 'temp_sessions')
     session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
     
+    os.makedirs(os.path.dirname(session_temp), exist_ok=True)
     os.makedirs(session_temp, exist_ok=True)
     file_paths = file_handlers.save_uploaded_files(uploaded_files, directory_path=session_temp)
     st.session_state.temp_files_created = True
+    st.session_state.session_temp = session_temp
 
     # Process uploaded files
     directory = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
