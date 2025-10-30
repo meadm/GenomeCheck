@@ -85,7 +85,7 @@ if uploaded_files:
     )
     # If BUSCO is not available (e.g., Streamlit Cloud), force-disable and inform the user
     if not busco_available:
-        st.warning("BUSCO is not available on the Streamlit Cloud or lean Docker (e.g. 'genome-qc:latest') implementations of this app. Run locally or use our Docker image with BUSCO ('genome-qc:busco') if you need BUSCO analyses.")
+        st.warning("BUSCO is not available on the Streamlit Cloud or lean Docker (e.g. 'genomecheck:latest') implementations of this app. Run locally or use our Docker image with BUSCO ('genomecheck:busco') if you need BUSCO analyses.")
         include_busco = False
     
     if include_busco:
@@ -115,8 +115,10 @@ if uploaded_files:
         busco_cpus = st.slider("BUSCO CPUs", min_value=1, max_value=max_cpus, value=min(4, max_cpus))
 
     # Save uploaded files locally into session-specific temp directory
-    # Ensure session_temp exists (fallback to environment var)
+    # Ensure session_temp exists (fallback to environment var or 'temp_sessions')
     session_temp = st.session_state.get('session_temp') or os.environ.get('SESSION_TEMP_DIR')
+    
+    os.makedirs(session_temp, exist_ok=True)
     file_paths = file_handlers.save_uploaded_files(uploaded_files, directory_path=session_temp)
     st.session_state.temp_files_created = True
 
