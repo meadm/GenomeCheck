@@ -98,6 +98,7 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
 
 ### Cleanup
 - Use the "Clean up temporary files" button to free up disk space after analysis or to reset the app if old results are still present.
+  **Note:** On Streamlit Cloud, this button may not always work due to the ephemeral filesystem. In such cases, refreshing yoru browser will reset the session. 
 - Temporary files are automatically cleaned up when you refresh the page or upload new files
 
 ## Notes about BUSCO
