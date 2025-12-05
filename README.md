@@ -98,6 +98,7 @@ Open the URL printed by Streamlit (usually http://localhost:8501) in your web br
 
 ### Cleanup
 - Use the "Clean up temporary files" button to free up disk space after analysis or to reset the app if old results are still present.
+  **Note:** On Streamlit Cloud, this button may not always work due to the ephemeral filesystem. In such cases, refreshing yoru browser will reset the session. 
 - Temporary files are automatically cleaned up when you refresh the page or upload new files
 
 ## Notes about BUSCO
@@ -123,12 +124,11 @@ Then run using the `docker run` commands above, but omit the `meadm` prefix to t
 
 ## Releases — Docker Images & Example Data
 
-Docker images and example datasets are published on the project's GitHub Releases page. Each release contains:
-- pre-built Docker image archives (compressed `.tar.gz`) for different variants (e.g. `lean` / `busco`),
-- example data (e.g. `example-yeast-genomes.zip`),
-- checksums and optional signatures.
+Docker images and example datasets are available on the project's [GitHub Releases page](https://github.com/meadm/GenomeCheck/releases).
 
-Release page: https://github.com/meadm/GenomeCheck/releases
+Each release contains:
+- Pre-built Docker image archives (`.tar.gz`) for different variants (e.g. `lean` / `busco`)
+- Example data (e.g. `example-bacteria-genomes.zip`)
 
 ## Contributing and Development
 

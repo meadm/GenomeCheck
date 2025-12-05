@@ -40,9 +40,11 @@ def cleanup_temp_directory(directory_path: str = None) -> None:
     './temp/' as a fallback.
     """
     if directory_path is None:
-        directory_path = os.environ.get('SESSION_TEMP_DIR', './temp/')
-    shutil.rmtree(directory_path, ignore_errors=True)
-
+        directory_path = os.environ.get('SESSION_TEMP_DIR', './temp_sessions/')
+    if os.path.exists(directory_path):
+        shutil.rmtree(directory_path, ignore_errors=True)
+    # Recreate the base directory to avoid missing path on next run
+    os.makedirs(directory_path, exist_ok=True)
 
 def register_cleanup_on_exit(directory_path: str = None) -> None:
     """Register cleanup function to run when the application exits.
