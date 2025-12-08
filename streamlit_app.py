@@ -37,10 +37,47 @@ if 'session_id' not in st.session_state:
 
 # Link to repository / documentation
 st.markdown(
-    "<div style='background:#fff8e1;border-left:6px solid #ffd54f;padding:12px;border-radius:6px'>"
-    "<h3 style='margin:0'>📘 Repository & Documentation</h2>"
-    "<p style='margin:6px 0 0'>Visit <a href='https://github.com/meadm/GenomeCheck' target='_blank' rel='noopener'>the project on GitHub</a> for full docs, releases, and example data.</p>"
-    "</div>",
+    """
+    <style>
+    .info-box {
+        background: #fff8e1;
+        border-left: 6px solid #ffd54f;
+        padding: 12px;
+        border-radius: 6px;
+        color: #1f1f1f;
+    }
+    .info-box h3 {
+        margin: 0;
+        color: #1f1f1f;
+    }
+    .info-box p {
+        margin: 6px 0 0;
+        color: #1f1f1f;
+    }
+    .info-box a {
+        color: #1976d2;
+    }
+    /* Dark mode styles */
+    [data-theme="dark"] .info-box {
+        background: #2d2d2d;
+        border-left-color: #ffd54f;
+        color: #e0e0e0;
+    }
+    [data-theme="dark"] .info-box h3 {
+        color: #e0e0e0;
+    }
+    [data-theme="dark"] .info-box p {
+        color: #e0e0e0;
+    }
+    [data-theme="dark"] .info-box a {
+        color: #64b5f6;
+    }
+    </style>
+    <div class="info-box">
+        <h3>📘 Repository & Documentation</h3>
+        <p>Visit <a href='https://github.com/meadm/GenomeCheck' target='_blank' rel='noopener'>the project on GitHub</a> for full docs, releases, and example data.</p>
+    </div>
+    """,
     unsafe_allow_html=True,
 )
 
@@ -85,7 +122,7 @@ if uploaded_files:
     )
     # If BUSCO is not available (e.g., Streamlit Cloud), force-disable and inform the user
     if not busco_available:
-        st.warning("BUSCO is not available on the Streamlit Cloud or lean Docker (e.g. 'genomecheck:latest') implementations of this app. Run locally or use our Docker image with BUSCO ('genomecheck:busco') if you need BUSCO analyses.")
+        st.warning("BUSCO is not available on the Streamlit Cloud or lean Docker (e.g. 'genomecheck:latest') implementations of this app. If you need BUSCO analyses, run locally or use our Docker image with BUSCO ('genomecheck:busco').")
         include_busco = False
     
     if include_busco:
